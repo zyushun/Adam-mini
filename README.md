@@ -18,7 +18,7 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-You can use Adam-mini optimizer as follows.
+You can use Adam-mini optimizer as follows. Our implementation supports popular distributed frameworks including DDP, FSDP, and Deepspeed platform.
 
 ```
 import Adam_mini
@@ -52,7 +52,7 @@ If you are training a language model, please pass the following info to Adam-min
 
 
 
-We here provide sample code on pre-training, SFT, and RLHF. We run all the experiments on 4xA800-80GB GPUs.
+We here provide sample code on pre-training, SFT, and RLHF. You need at least  2xA800-80GB or 2xA100-80GB GPUs to run the experiments.
 
 ### Example 1: Pre-training 
 
