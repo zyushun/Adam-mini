@@ -223,11 +223,11 @@ class Adam_mini(Optimizer):
                             tmp_lr = torch.sum(grad*grad)                               
                         if (state["reduced"]):
                             dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
-                    
-                        tmp_lr = tmp_lr / (state["dimension"])
-                        tmp_lr = tmp_lr.to(grad.device)
                         if (p.grad is None):
                             continue
+                        tmp_lr = tmp_lr / (state["dimension"])
+                        tmp_lr = tmp_lr.to(grad.device)
+                        
                         if group["weight_decay"] != 0:
                             p.data.mul_(1 - lr * group["weight_decay"])
                         state["iteration"] += 1
