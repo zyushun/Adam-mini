@@ -117,13 +117,13 @@ class Adam_mini(Optimizer):
                             state["m"] = state["m"].view(-1, dim)
                             state['head'] = state['m'].shape[0]
                             state["iteration"] = 0
-                            state["vmean"] = torch.zeros(state['head']).cuda()
+                            state["vmean"] = torch.zeros(state['head']).to(device)
 
                         grad = p.grad.data.to(torch.float32)
                         head = state['head']
                         grad = grad.view(head, dim)
 
-                        tmp_lr = torch.mean(grad*grad, dim = 1).cuda()
+                        tmp_lr = torch.mean(grad*grad, dim = 1).to(device)
                         state["vmean"].mul_(beta2).add_(tmp_lr, alpha=1 - beta2)
                         v = state["vmean"]
 
@@ -158,13 +158,13 @@ class Adam_mini(Optimizer):
                             state["m"]  =  torch.zeros_like(p.data).to(torch.float32)
                             state["m"] = state["m"].view(group["n_head"], group["q_per_kv"] + 2, -1)
                             state["iteration"] = 0
-                            state["vmean"] = torch.zeros(group["n_head"], group["q_per_kv"]+2).cuda()
+                            state["vmean"] = torch.zeros(group["n_head"], group["q_per_kv"]+2).to(device)
                             
 
                         grad = p.grad.data.to(torch.float32)
                         grad = grad.view(group["n_head"], group["q_per_kv"] + 2, -1) 
 
-                        tmp_lr = torch.mean(grad*grad, dim = 2).cuda()
+                        tmp_lr = torch.mean(grad*grad, dim = 2).to(device)
                         state["vmean"].mul_(beta2).add_(tmp_lr, alpha=1 - beta2)
                         v = state["vmean"]
                 
@@ -197,7 +197,7 @@ class Adam_mini(Optimizer):
                         
                     else:        
                         if (len(state)==0):                   
-                            dimension = torch.tensor(p.data.numel()).cuda().to(torch.float32)
+                            dimension = torch.tensor(p.data.numel()).to(device).to(torch.float32)
                             reduced = False
                             if (self.world_size > 1) and (self.zero_optimization_stage == 3):
                                 tensor_list = [torch.zeros_like(dimension) for _ in range(self.world_size)]
@@ -214,13 +214,13 @@ class Adam_mini(Optimizer):
                             state["m"] = torch.zeros_like(p.data).to(torch.float32)
                             state["iteration"] = 0
                             state["reduced"] = reduced
-                            state["vmean"] = torch.tensor(0.0).cuda()                                
+                            state["vmean"] = torch.tensor(0.0).to(device)                                
                             state["dimension"] = dimension.item()
                         if p.grad is None:
-                            tmp_lr = torch.tensor(0.0).cuda()
+                            tmp_lr = torch.tensor(0.0).to(device)
                         else:
                             grad = p.grad.data.to(torch.float32)
-                            tmp_lr = torch.sum(grad*grad)                               
+                            tmp_lr = torch.sum(grad*grad).to(device)                              
                         if (state["reduced"]):
                             dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
                         if (p.grad is None):
