@@ -18,7 +18,7 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-You can use Adam-mini optimizer as follows. Our implementation supports popular distributed frameworks including DDP, FSDP, and Deepspeed platform.
+You can use Adam-mini optimizer as follows. Our implementation supports popular distributed frameworks including DDP, FSDP, and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat).
 
 ```
 import Adam_mini
@@ -38,13 +38,13 @@ n_query_groups = config.n_query_groups)
 
 
 
-Regarding all the hyperparameters, including learning rate (lr), weight_decay, beta1, beta2, epsilon, we recommend using the same values as those used for AdamW.
+**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, epsilon, we recommend using the same values as those used for AdamW.
 
 
 
 If you are training a language model, please pass the following info to Adam-mini:
 
-- zero_3: set to True if you are using zero_3 in Deepspeed, or if you are using model parallelism with more than 1 GPU. Set to False if otherwise.
+- zero_3: set to True if you are using zero_3 in DeepSpeed, or if you are using model parallelism with more than 1 GPU. Set to False if otherwise.
 
 - n_embd: number of embedding dimensions. Could be unspecified if you are training non-transformer models.
 - n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
@@ -52,11 +52,11 @@ If you are training a language model, please pass the following info to Adam-min
 
 
 
-We here provide sample code on pre-training, SFT, and RLHF. You need at least  2xA800-80GB or 2xA100-80GB GPUs to run the experiments.
+We here provide sample code on pre-training, SFT, and RLHF. You need  2xA800-80GB or 2xA100-80GB GPUs to run the experiments below.
 
 ### Example 1: Pre-training 
 
-We pre-train GPT2 series (125M-1.5B) on [NanoGPT](https://github.com/karpathy/nanoGPT) codebase.  Install dependencies from pip:
+We pre-train GPT2 series (125M-1.5B) using [NanoGPT](https://github.com/karpathy/nanoGPT) codebase under DDP framework.  Install dependencies from pip:
 
 ```
 conda env create -f gpt2/environment.yml
@@ -70,11 +70,11 @@ Run the code for GPT2 pre-training:
 bash run_gpt2.sh 
 ```
 
-We also pre-train Llama series on  [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase. We are now wrapping up the code and it will come soon.
+We also pre-train Llama series (1B and 7B) using  [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase under FSDP framework. We are now wrapping up the code and it will come soon.
 
 ### Example 2: Supervised Fine-tuning and RLHF 
 
-We fine-tune Llama2-7B on  [ReMax](https://github.com/liziniu/ReMax) codebase.  Install dependencies from pip:
+We fine-tune Llama2-7B using  [ReMax](https://github.com/liziniu/ReMax) codebase under [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) framework.  Install dependencies from pip:
 
 ```
 conda env create -f RLHF/environment.yml
@@ -111,7 +111,7 @@ bash training_scripts/po/remax/run_remax.sh
 
 ## Acknowledgements
 
-The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [TinyLlama](https://github.com/jzhang38/TinyLlama),  and [ReMax](https://github.com/liziniu/ReMax). 
+The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [TinyLlama](https://github.com/jzhang38/TinyLlama),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
 
 ## Citation
 
