@@ -110,7 +110,7 @@ bash training_scripts/po/remax/run_remax.sh
 
 ## Remarks
 
-**About checkpoint saving:**  If you are using FSDP distributed framework, please set "use_orig_params  = False"  in your FSDPStrategy. This allows you to save and load checkpoint without any issue (as suggested by [issues #5](https://github.com/zyushun/Adam-mini/issues/5)).   Conversely, using the default setting of "use_orig_params = True" may result in errors during checkpoint saving. We are now addressing this issue and aim to resolve it shortly.
+**About checkpoint saving:**  If you are using FSDP distributed framework, please set "use_orig_params  = False"  in your FSDPStrategy. This allows you to save and load checkpoint without any issue (as suggested by [issues #5](https://github.com/zyushun/Adam-mini/issues/5)).   Conversely, using the default setting of "use_orig_params = True" may result in errors during checkpoint saving. 
 
 
 ## Acknowledgements
