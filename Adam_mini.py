@@ -16,7 +16,7 @@ class Adam_mini(Optimizer):
             beta1=0.9,
             beta2=0.999,
             epsilon=1e-8,
-            zero_3=False,
+            model_sharding=False,
             n_embd=2048,
             n_head=32,
             n_query_groups=None
@@ -24,7 +24,7 @@ class Adam_mini(Optimizer):
         '''
         model: the model you are training.
 
-        zero_3: set to True if you are using zero_3 in Deepspeed, or if you are using model parallelism with more than 1 GPU. Set to False if otherwise.
+        model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if otherwise.
 
         n_embd: number of embedding dimensions. Could be unspecified if you are training non-transformer models.
 
@@ -43,10 +43,9 @@ class Adam_mini(Optimizer):
 
         self.model = model
         self.world_size = torch.cuda.device_count()
-        self.zero_optimization_stage = 0
-        if zero_3:
-            self.zero_optimization_stage = 3
-            print("Adam-mini is using zero_3")
+        self.model_sharding = model_sharding
+        if self.model_sharding:
+            print("Adam-mini is using model_sharding")
         optim_groups = []
         for name, param in self.model.named_parameters():
             if param.requires_grad:
@@ -197,7 +196,7 @@ class Adam_mini(Optimizer):
                         if (len(state) == 0):
                             dimension = torch.tensor(p.data.numel()).to(device).to(torch.float32)
                             reduced = False
-                            if (self.world_size > 1) and (self.zero_optimization_stage == 3):
+                            if (self.world_size > 1) and (self.model_sharding is True):
                                 tensor_list = [torch.zeros_like(dimension) for _ in range(self.world_size)]
                                 dist.all_gather(tensor_list, dimension)
                                 s = 0

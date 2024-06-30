@@ -124,10 +124,9 @@ class DeepSpeedRLHFEngine:
                 beta1=0.9,
                 beta2=0.95,
                 lr=self.args.actor_learning_rate,
-                zero_3=self.args.actor_zero_stage == 3,
+                model_sharding=self.args.zero_stage != 0,
                 n_embd = 4096, 
-                n_head = 32, 
-                n_query_groups = 1
+                n_head = 32,
             )
             ds_config["zero_allow_untested_optimizer"] = True
         else:

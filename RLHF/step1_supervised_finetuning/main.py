@@ -441,10 +441,9 @@ def main():
             beta1=0.9,
             beta2=0.95,
             lr=args.learning_rate,
-            zero_3=args.zero_stage == 3,
+            model_sharding=args.zero_stage != 0,
             n_embd = 4096, 
-            n_head = 32, 
-            n_query_groups = 1
+            n_head = 32
         )
         ds_config["zero_allow_untested_optimizer"] = True
         ds_config["zero_force_ds_cpu_optimizer"] = False

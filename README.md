@@ -30,10 +30,10 @@ weight_decay = weight_decay,
 beta1 = beta1, 
 beta2 = beta2, 
 epsilon = epsilon,
-zero_3 = True, 
-n_embd = config.n_embd, 
-n_head = config.n_head, 
-n_query_groups = config.n_query_groups)
+model_sharding = True, 
+n_embd = n_embd, 
+n_head = n_head, 
+n_query_groups = n_query_groups)
 ```
 
 
@@ -44,7 +44,7 @@ n_query_groups = config.n_query_groups)
 
 If you are training a language model, please pass the following info to Adam-mini:
 
-- zero_3: set to True if you are using zero_3 in DeepSpeed, or if you are using model parallelism with more than 1 GPU. Set to False if otherwise.
+- model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
 
 - n_embd: number of embedding dimensions. Could be unspecified if you are training non-transformer models.
 - n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
@@ -107,6 +107,10 @@ bash training_scripts/po/remax/run_remax.sh
 ```
 
 
+
+## Remarks
+
+**About checkpoint saving:**  If you are using FSDP distributed framework, please set "use_orig_params  = False"  in your FSDPStrategy. This allows you to save and load checkpoint without any issue.   Conversely, using the default setting of "use_orig_params = True" may result in errors during checkpoint saving. We are now addressing this issue and aim to resolve it shortly.
 
 
 ## Acknowledgements
