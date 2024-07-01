@@ -1,5 +1,5 @@
 # Adam-mini
-This repository contains PyTorch implementation of Adam-mini,  an optimizer that achieves on-par or better performance than AdamW with **45% to 50%** less memory footprint.  
+This repository contains PyTorch implementation of Adam-mini,  a mini-version of Adam that achieves on-par or better performance than AdamW with **45% to 50%** less memory footprint.  
 
 Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e.,  $1/\sqrt{v}$): we argue that >90% of these lr in $v$ could be harmlessly removed if we:
 
