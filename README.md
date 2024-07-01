@@ -110,6 +110,20 @@ bash training_scripts/po/remax/run_remax.sh
 
 ## Remarks
 
+**How to use in Huggingface Trainer**. If you are using Huggingface Trainer, please rewrite the "create_optimizer" as follows to change optimizer:
+
+```
+ def create_optimizer(self) -> "torch.optim.Optimizer":
+        if self.optimizer is None:
+            if (self.finetuning_args.use_adammini):
+                self.optimizer = Adam_mini(model = self.model, lr = self.args.learning_rate, weight_decay = self.args.weight_decay, 
+                                           beta1 = self.args.adam_beta1, beta2 = self.args.adam_beta2, model_sharding = True, 
+                                           n_embd = 4096, n_head = 32, n_query_groups = 32)
+        return super().create_optimizer()
+```
+
+
+
 **About checkpoint saving:**  If you are using FSDP distributed framework, please set "use_orig_params  = False"  in your FSDPStrategy. This allows you to save and load checkpoint without any issue (as suggested by [issues #5](https://github.com/zyushun/Adam-mini/issues/5)).   Conversely, using the default setting of "use_orig_params = True" may result in errors during checkpoint saving. 
 
 
