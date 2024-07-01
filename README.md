@@ -6,7 +6,7 @@ Adam-mini reduces memory by cutting down the learning rate (lr) resources in Ada
 (1) carefully partition the parameters into blocks following our proposed principle related to **Hessian structure**.  
 (2) assign a single **but good** lr to each parameter block.  
 
-We find a cheap and effective way to reach these requirements. The resulting algorithm is shown below in **Algorithm 1**. Check out more detailed descriptions in our paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2402.16788).
+We find a cheap and effective way to reach these requirements. The resulting algorithm is shown below in **Algorithm 1**. Check out more detailed descriptions in our paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
 <img src="figures/illustration.png" style="zoom:40%;" />
 
