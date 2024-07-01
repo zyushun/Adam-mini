@@ -110,7 +110,7 @@ bash training_scripts/po/remax/run_remax.sh
 
 ## Remarks
 
-**How to use in Huggingface Trainer**. If you are using Huggingface Trainer, please rewrite the "create_optimizer" as follows to change optimizer:
+**How to use Adam-mini in Huggingface Trainer**. If you are using Huggingface Trainer, please rewrite the "create_optimizer" as follows to change optimizer:
 
 ```
  def create_optimizer(self) -> "torch.optim.Optimizer":
