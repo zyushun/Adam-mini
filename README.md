@@ -46,7 +46,7 @@ If you are training a language model, please pass the following info to Adam-min
 
 - model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
 
-- n_embd: number of embedding dimensions. Could be unspecified if you are training non-transformer models.
+- n_embd: number of hidden feature dimensions (NOT volcabulary size!). Could be unspecified if you are training non-transformer models.
 - n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
 - n_query_groups: number of query groups in Group query Attention. If not specified, it will be equal to n_head. Could be unspecified if you are training non-transformer models.
 
