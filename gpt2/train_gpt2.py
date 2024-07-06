@@ -24,7 +24,6 @@ from contextlib import nullcontext
 
 import numpy as np
 import json
-import hessian_spectrum
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
