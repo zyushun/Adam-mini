@@ -16,29 +16,41 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 
 
+
+
 ## How to use 
 
-You can use Adam-mini optimizer as follows. Our implementation supports popular distributed frameworks including DDP, FSDP, and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat).
+Our current implementation supports popular distributed frameworks and codebase including:
+
+1. DDP distributed framework
+2. FSDP distributed framework
+3. [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) 
+4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
+5. [Torchtitan](https://github.com/pytorch/torchtitan) 
+6. More is coming! Do not hestitate to contact us if you have any preferred platform that we do not support!
+
+
+You can use Adam-mini optimizer as follows. 
 
 ```
 import Adam_mini
 
-optimizer = Adam_mini.Adam_mini(
-model = model, 
-lr = learning_rate, 
-weight_decay = weight_decay, 
-beta1 = beta1, 
-beta2 = beta2, 
-epsilon = epsilon,
-model_sharding = True, 
-n_embd = n_embd, 
-n_head = n_head, 
-n_query_groups = n_query_groups)
+optimizer = Adam_mini(
+		model = model, 
+		lr=lr, 
+    betas = (0.9,0.95), 
+    eps = 1e-8,
+    weight_decay=weight_decay, 
+    model_sharding=True,
+    n_embd=4096,
+    n_head=32,
+    n_query_groups=32
+    )
 ```
 
 
 
-**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, epsilon, we recommend using the same values as those used for AdamW.
+**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
 
 
 
@@ -46,7 +58,7 @@ If you are training a language model, please pass the following info to Adam-min
 
 - model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
 
-- n_embd: number of hidden feature dimensions (NOT volcabulary size!). Could be unspecified if you are training non-transformer models.
+- n_embd: number of hidden feature dimension (NOT volcabulary size!). Could be unspecified if you are training non-transformer models.
 - n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
 - n_query_groups: number of query groups in Group query Attention. If not specified, it will be equal to n_head. Could be unspecified if you are training non-transformer models.
 

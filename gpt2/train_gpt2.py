@@ -250,7 +250,13 @@ scaler = torch.cuda.amp.GradScaler(enabled=(dtype == 'float16'))
 if algorithm == 'adamw':
     optimizer = model.configure_optimizers(weight_decay, learning_rate, (beta1, beta2), device_type)
 elif algorithm == 'adam_mini':
-    optimizer = Adam_mini.Adam_mini(model = model, lr = learning_rate, weight_decay = weight_decay, beta1 = beta1, beta2 = beta2, model_sharding = False, n_embd = n_embd, n_head = n_head)
+    optimizer = Adam_mini(model, lr=lr,
+              betas=(beta1, beta2),
+              weight_decay=weight_decay,
+              model_sharding=False,
+              n_embd=n_embd,
+              n_head=n_head
+              )
     raise ValueError("algorithm not supported")
 
 if init_from == 'resume':

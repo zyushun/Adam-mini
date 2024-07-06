@@ -118,16 +118,14 @@ class DeepSpeedRLHFEngine:
 
         # Optimizer
         if self.args.optimizer == "adam_mini":
-            optim = Adam_mini(
-                model = actor_model,
-                weight_decay=self.args.actor_weight_decay,
-                beta1=0.9,
-                beta2=0.95,
-                lr=self.args.actor_learning_rate,
-                model_sharding=self.args.zero_stage != 0,
-                n_embd = 4096, 
-                n_head = 32,
-            )
+            optim = Adam_mini(model = actor_model,
+                      lr=self.args.actor_learning_rate,
+                      betas=(0.9, 0.95),
+                      weight_decay=self.args.actor_weight_decay,
+                      model_sharding=self.args.zero_stage != 0,
+                      n_embd=4096,
+                      n_head=32
+                      )
             ds_config["zero_allow_untested_optimizer"] = True
         else:
             AdamOptimizer = DeepSpeedCPUAdam if self.args.offload else FusedAdam
