@@ -20,14 +20,14 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-Our current implementation supports popular distributed frameworks and codebase including:
+Our current implementation of Adam-mini supports popular distributed frameworks and codebase including:
 
 1. DDP distributed framework
 2. FSDP distributed framework
 3. [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) 
 4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
 5. [Torchtitan](https://github.com/pytorch/torchtitan) 
-6. More is coming! Do not hestitate to contact us if you have any preferred platform that we do not support!
+6. More is coming! Do not hestitate to contact us if you have any preferred platform that we currently do not support!
 
 
 You can use Adam-mini optimizer as follows. 
