@@ -36,15 +36,15 @@ You can use Adam-mini optimizer as follows.
 import Adam_mini
 
 optimizer = Adam_mini(
-		model = model, 
-		lr=lr, 
-    betas = (0.9,0.95), 
-    eps = 1e-8,
-    weight_decay=weight_decay, 
-    model_sharding=True,
-    n_embd=4096,
-    n_head=32,
-    n_query_groups=32
+								model = model, 
+								lr=lr, 
+    						betas = (0.9,0.95), 
+    						eps = 1e-8,
+    						weight_decay=weight_decay, 
+    						model_sharding=True,
+    						n_embd=4096,		
+    						n_head=32,
+    						n_query_groups=32
     )
 ```
 
