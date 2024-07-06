@@ -27,7 +27,7 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 3. [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) 
 4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
 5. [Torchtitan](https://github.com/pytorch/torchtitan) 
-6. More is coming! Do not hestitate to contact us if Adam-mini do not support your codebase!
+6. More is coming! Do not hestitate to contact us if Adam-mini does not support your codebase!
 
 
 You can use Adam-mini optimizer as follows. 
