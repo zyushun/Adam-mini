@@ -253,7 +253,7 @@ elif algorithm == 'adam_mini':
               betas=(beta1, beta2),
               weight_decay=weight_decay,
               model_sharding=False,
-              n_embd=n_embd,
+              n_feature=n_embd,
               n_head=n_head
               )
     raise ValueError("algorithm not supported")

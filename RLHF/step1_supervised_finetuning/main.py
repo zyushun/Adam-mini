@@ -440,7 +440,7 @@ def main():
                               betas=(0.9, 0.95),
                               weight_decay=args.weight_decay,
                               model_sharding=args.zero_stage != 0,
-                              n_embd=4096,
+                              n_feature=4096,
                               n_head=32
                               )
         ds_config["zero_allow_untested_optimizer"] = True

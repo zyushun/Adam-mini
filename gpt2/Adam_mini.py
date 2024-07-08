@@ -17,36 +17,36 @@ class Adam_mini(Optimizer):
             betas=(0.9, 0.999),
             eps=1e-8,
             model_sharding=False,
-            n_embd=2048,
+            n_feature=2048,
             n_head=32,
-            n_query_groups=None,
+            n_kv_head=None,
     ):
         '''
         model: the model you are training.
 
         model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if otherwise.
 
-        n_embd: number of hidden feature dimensions. Could be unspecified if you are training non-transformer models.
+        n_feature: number of hidden feature dimensions. Could be unspecified if you are training non-transformer models.
 
         n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
 
-        n_query_groups: number of query groups in Group query Attention. If not specified, it will be equal to n_head. Could be unspecified if you are training non-transformer models.
+        n_kv_head: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If not specified, it will be equal to n_head. Could be unspecified if you are training non-transformer models.
         '''
 
-        self.n_embd = n_embd
+        self.n_feature = n_feature
         self.n_head = n_head
-        if n_query_groups is not None:
-            self.n_query_groups = n_query_groups
-            assert self.n_head % self.n_query_groups == 0
+        if n_kv_head is not None:
+            self.n_kv_head = n_kv_head
+            assert self.n_head % self.n_kv_head == 0
         else:
-            self.n_query_groups = self.n_head
+            self.n_kv_head = self.n_head
         self.model = model
         self.world_size = torch.cuda.device_count()
         self.model_sharding = model_sharding
         if self.model_sharding:
             print("=====>>> Adam-mini is using model_sharding")
-        optim_groups = []
 
+        optim_groups = []
         count_embd = 0
         count_output = 0
         count_qk = 0
@@ -69,36 +69,53 @@ class Adam_mini(Optimizer):
                 if ("self_attn.q_proj.weight" in name or "wq.weight" in name):
                     count_qk += 1
 
-                    dic["parameter_per_head"] = self.n_embd * self.n_embd // self.n_head
-                    if (self.n_embd * self.n_embd % self.n_head) != 0:
-                        raise ValueError("'n_embd * n_embd' is not a multiple of  n_head ")
+                    dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_head
+                    if (self.n_feature * self.n_feature % self.n_head) != 0:
+                        raise ValueError("'n_feature * n_feature' is not a multiple of  n_head ")
 
                 if ("self_attn.k_proj.weight" in name or "wk.weight" in name):
                     count_qk += 1
 
-                    dic["parameter_per_head"] = self.n_embd * self.n_embd // self.n_query_groups
-                    if (self.n_embd * self.n_embd % self.n_query_groups) != 0:
-                        raise ValueError("'n_embd * n_embd' is not a multiple of  n_query_groups ")
+                    dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_kv_head
+                    if (self.n_feature * self.n_feature % self.n_kv_head) != 0:
+                        raise ValueError("'n_feature * n_feature' is not a multiple of  n_kv_head ")
 
                 if ("attn.attn.weight" in name or "attn.qkv.weight" in name):
                     count_qk += 1
                     dic["n_head"] = self.n_head
-                    dic["q_per_kv"] = self.n_head // self.n_query_groups
-                    if (self.n_head % self.n_query_groups) != 0:
-                        raise ValueError("'n_head' is not a multiple of n_query_groups ")
+                    dic["q_per_kv"] = self.n_head // self.n_kv_head
+                    if (self.n_head % self.n_kv_head) != 0:
+                        raise ValueError("'n_head' is not a multiple of n_kv_head ")
 
                 optim_groups.append(dic)
 
         if count_embd == 0:
             # warning
-            print("=====>>> Warning: No embedding layer found. Please check the name of your embedding layer")
+            print(
+                "=====>>> Warning: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_blocks' of Adam-mini.")
         if count_output == 0:
             # warning
-            print("=====>>> Warning: No output layer found. Please check the name of your output layer")
+            print(
+                "=====>>> Warning: No output layer found.  If you are training Transformers, please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini")
         if count_qk == 0:
             # warning
             print(
-                "=====>>>  Warning: No Query or Key found. Please check the name of your Query and Key in attention blocks")
+                "=====>>>  Warning: No Query or Key found.  If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+
+        if count_output + count_embd + count_qk == 0:
+            print(
+                "=====>>>  Warning: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
+
+        # embd_blocks, including embd and output layers. Use normal adamW updates for these blocks
+        self.embd_blocks = {
+            "embed_tokens", "embed", "embd", "wte", "lm_head", "tok_embeddings", "output.weight"
+        }
+        # Query and Keys, will  assign lrs by heads
+        self.qk_blocks = {
+            "k_proj.weight", "q_proj.weight", "wq.weight", "wk.weight", "q.weight", "k.weight"
+        }
+        # fused attn blocks, will separate in to Q, K, V and assign lrs accordingly. This is used in TinyLlama
+        self.fused_attn_blocks = {"attn.attn.weight", "attn.qkv.weight"}
 
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -108,12 +125,12 @@ class Adam_mini(Optimizer):
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         if not 0.0 <= weight_decay:
             raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
-        if not self.n_embd == int(self.n_embd):
-            raise ValueError("Invalid n_embd value: {}".format(self.n_embd))
+        if not self.n_feature == int(self.n_feature):
+            raise ValueError("Invalid n_feature value: {}".format(self.n_feature))
         if not self.n_head == int(self.n_head):
             raise ValueError("Invalid n_head value: {}".format(self.n_head))
-        if not self.n_query_groups == int(self.n_query_groups):
-            raise ValueError("Invalid n_query_groups value: {}".format(self.n_query_groups))
+        if not self.n_kv_head == int(self.n_kv_head):
+            raise ValueError("Invalid n_kv_head value: {}".format(self.n_kv_head))
 
         defaults = dict(lr=lr, beta1=betas[0], beta2=betas[1], eps=eps)
 
@@ -130,8 +147,8 @@ class Adam_mini(Optimizer):
 
                 for p in group["params"]:
                     state = self.state[p]
-                    if (
-                            "embed_tokens" in name or "wte" in name or "lm_head" in name or "tok_embeddings" in name or "output.weight" in name):
+
+                    if any(block in name for block in self.embd_blocks):  # this is for embedding and output layer
                         if p.grad is None:
                             continue
                         if len(state) == 0:
@@ -156,8 +173,7 @@ class Adam_mini(Optimizer):
                         stepsize = lr / bias_correction_1
                         p.addcdiv_(state["m"], h, value=-stepsize)
 
-                    elif (
-                            "self_attn.k_proj.weight" in name or "self_attn.q_proj.weight" in name or "wq.weight" in name or "wk.weight" in name):
+                    elif any(block in name for block in self.qk_blocks):  # this is for query and key
 
                         if p.grad is None:
                             continue
@@ -181,7 +197,6 @@ class Adam_mini(Optimizer):
                         tmp_lr = torch.mean(grad * grad, dim=1).unsqueeze(1).to(
                             device)  # unsqueeze to size([head, 1]) to match the size of vmean
 
-                        # print(f'tmplr = {tmp_lr}, size = {tmp_lr.size()}')
                         state["vmean"].mul_(beta2).add_(tmp_lr, alpha=1 - beta2)
                         v = state["vmean"]
 
@@ -209,8 +224,8 @@ class Adam_mini(Optimizer):
                         update.mul_(lr)
                         p.add_(-update)
 
-                    elif ("attn.attn.weight" in name or "attn.qkv.weight" in name):
-                        # this is for the attention implementation in TinyLlama
+                    elif any(block in name for block in
+                             self.fused_attn_blocks):  # this is for the attention implementation in TinyLlama
                         if p.grad is None:
                             continue
                         if (len(state) == 0):
@@ -251,7 +266,7 @@ class Adam_mini(Optimizer):
                         p.add_(-update)
 
 
-                    else:
+                    else:  # other blocks
                         if (len(state) == 0):
                             dimension = torch.tensor(p.data.numel()).to(device).to(torch.float32)
                             reduced = False
