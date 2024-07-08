@@ -58,7 +58,7 @@ If you are training a language model, please pass the following info to Adam-min
 
 - model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
 
-- n_feature: number of hidden feature dimensions. Could be unspecified if you are training non-transformer models.
+- n_feature: dimension for hidden feature. Could be unspecified if you are training non-transformer models.
 - n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
 - n_kv_head: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
 
