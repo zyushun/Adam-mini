@@ -286,12 +286,15 @@ class Adam_mini(Optimizer):
                             state["m"] = torch.zeros_like(p.data).to(torch.float32)
                             state["iteration"] = 0
                             state["reduced"] = reduced
-                            state["vmean"] = torch.zeros_like(torch.sum(grad * grad)).to(
-                                device)  # actually this is just tensor(0.0), but this implementation is compatible with more general types of tensor such as  DTensor in Titan
+
+                            # actually this is just tensor(0.0), but this implementation is compatible with more general
+                            # types of tensor such as  DTensor in Titan
+                            state["vmean"] = torch.zeros_like(torch.sum(p.data * p.data)).to(device)
                             state["dimension"] = dimension.item()
                         if p.grad is None:
-                            tmp_lr = torch.zeros_like(torch.sum(grad * grad)).to(
-                                device)  # actually this is just tensor(0.0), but this implementation is compatible with more general types of tensor such as  DTensor in Titan
+                            # actually this is just tensor(0.0), but this implementation is compatible with more general
+                            # types of tensor such as  DTensor in Titan
+                            tmp_lr = torch.zeros_like(torch.sum(p.data * p.data)).to(device)
                         else:
                             grad = p.grad.data.to(torch.float32)
                             tmp_lr = torch.sum(grad * grad).to(device)
