@@ -97,7 +97,7 @@ class Adam_mini(Optimizer):
         if count_output == 0:
             # warning
             print(
-                "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers, please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini")
+                "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini")
         if count_qk == 0:
             # warning
             print(
