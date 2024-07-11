@@ -38,13 +38,13 @@ import Adam_mini
 optimizer = Adam_mini(
 		model = model, 
 		lr = lr, 
-		betas = (0.9,0.95), 
-		eps = 1e-8,
+		betas = (beta1,beta2), 
+		eps = eps,
 		weight_decay = weight_decay,
 		model_sharding = True,
-		n_feature = 4096,
-		n_head = 32,
-		n_kv_head = None
+		n_feature = dim,
+		n_head = n_head,
+		n_kv_head = n_kv_head
     )
 ```
 
