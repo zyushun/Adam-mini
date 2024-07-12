@@ -33,18 +33,18 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 You can use Adam-mini optimizer as follows. 
 
 ```
-import Adam_mini
+from Adam_mini import Adam_mini
 
 optimizer = Adam_mini(
 		model = model, 
 		lr = lr, 
-		betas = (0.9,0.95), 
-		eps = 1e-8,
+		betas = (beta1,beta2), 
+		eps = eps,
 		weight_decay = weight_decay,
 		model_sharding = True,
-		n_feature = 4096,
-		n_head = 32,
-		n_kv_head = None
+		n_feature = dim,
+		n_head = n_head,
+		n_kv_head = n_kv_head
     )
 ```
 
@@ -66,7 +66,7 @@ If you are training a language model, please pass the following info to Adam-min
 
 We here provide sample code on pre-training, SFT, and RLHF. You need  2xA800-80GB or 2xA100-80GB GPUs to run the experiments below.
 
-### Example 1: Pre-training 
+### Example 1: GPT2 Pre-training 
 
 We pre-train GPT2 series (125M-1.5B) using [NanoGPT](https://github.com/karpathy/nanoGPT) codebase under DDP framework.  Install dependencies from pip:
 
@@ -82,9 +82,55 @@ Run the code for GPT2 pre-training:
 bash run_gpt2.sh 
 ```
 
-We also pre-train Llama series (1B and 7B) using  [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase under FSDP framework. We are now wrapping up the code and it will come soon.
+You will get the following curves.
 
-### Example 2: Supervised Fine-tuning and RLHF 
+
+
+<img src="figures/gpt2.png" style="zoom:100%;" />
+
+### Example 2: Llama3-8B Pre-training
+
+We here provide a sample code for pre-training  Llama3-8B using [Torchtitan](https://github.com/pytorch/torchtitan) code base under FSDP framework. The codebase also support other models from Llama series such as  Llama2-7B.  Install dependence from pip:
+
+```
+cd llama3_8b
+pip install -r requirements.txt
+pip3 install --pre torch==2.5.0.dev20240617  --index-url https://download.pytorch.org/whl/nightly/cu121 #or cu118
+pip3 install --pre torchdata --index-url https://download.pytorch.org/whl/nightly
+```
+
+Download a tokenizer.model. Follow the instructions on the official [meta-llama](https://huggingface.co/meta-llama/Meta-Llama-3-8B) repository to ensure you have access to the Llama model weights. Once you have confirmed access, you can run the following command to download the Llama 3 / Llama 2 tokenizer to your local machine.
+
+```
+# Get your HF token from https://huggingface.co/settings/tokens
+
+# llama3 tokenizer.model
+python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Meta-Llama-3-8B --tokenizer_path "original" --hf_token=...
+
+# llama2 tokenizer.model
+python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Llama-2-13b-hf --hf_token=...
+```
+
+Change your data path in ./train_configs/llama3_8b_mini.toml. 
+
+```
+dataset = "c4" #for debug can use "c4_mini"
+dataset_path = "your_path/c4" #for debug can use "./torchtitan/datasets/c4_mini/"
+```
+
+Then we can kick off the training. 
+
+```
+bash run_llama_training_mini.sh
+```
+
+You will get the following curve.
+
+<img src="figures/loss_llama3_8b.png" style="zoom:100%;" />
+
+We also pre-train Llama series using [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase. But some unexpected error occurs when saving checkpoint after the training. We are now working on this issue and hopefully we can fully support  [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase soon. If you are interested in pre-trianing Llama series, please first try  [Torchtitan](https://github.com/pytorch/torchtitan) code base as above.
+
+### Example 2: Llama2-7B Supervised Fine-tuning and RLHF 
 
 We fine-tune Llama2-7B using  [ReMax](https://github.com/liziniu/ReMax) codebase under [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) framework.  Install dependencies from pip:
 
@@ -118,6 +164,10 @@ Run the code for reward optimization in RLHF using ReMax:
 bash training_scripts/po/remax/run_remax.sh 
 ```
 
+You will get the following curves.
+
+<img src="figures/sft_and_rlhf.png" style="zoom:40%;" />
+
 
 
 ## Remarks
@@ -145,7 +195,7 @@ bash training_scripts/po/remax/run_remax.sh
 
 ## Acknowledgements
 
-The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [TinyLlama](https://github.com/jzhang38/TinyLlama),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
+The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [Torchtitan](https://github.com/pytorch/torchtitan),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
 
 ## Citation
 

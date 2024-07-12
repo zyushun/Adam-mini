@@ -51,6 +51,7 @@ class Adam_mini(Optimizer):
         count_output = 0
         count_qk = 0
         for name, param in self.model.named_parameters():
+            print('Detected param blocks by Adam-mini:', name, param.size())
             if param.requires_grad:
                 dic = {}
                 dic["name"] = name
@@ -60,62 +61,53 @@ class Adam_mini(Optimizer):
                 else:
                     dic["weight_decay"] = weight_decay
 
-                if ("embed_tokens" in name or "wte" in name or "tok_embeddings" in name):
+                if ("embed" in name or "wte" in name or "embd" in name):
                     count_embd += 1
 
-                if ("lm_head" in name or "output.weight" in name):
+                if ("lm_head.weight" in name or "output.weight" in name):
                     count_output += 1
 
-                if ("self_attn.q_proj.weight" in name or "wq.weight" in name):
+                if ("q_proj.weight" in name or "wq.weight" in name):
                     count_qk += 1
 
                     dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_head
                     if (self.n_feature * self.n_feature % self.n_head) != 0:
                         raise ValueError("'n_feature * n_feature' is not a multiple of  n_head ")
 
-                if ("self_attn.k_proj.weight" in name or "wk.weight" in name):
+                if ("k_proj.weight" in name or "wk.weight" in name):
                     count_qk += 1
 
                     dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_kv_head
                     if (self.n_feature * self.n_feature % self.n_kv_head) != 0:
                         raise ValueError("'n_feature * n_feature' is not a multiple of  n_kv_head ")
 
-                if ("attn.attn.weight" in name or "attn.qkv.weight" in name):
-                    count_qk += 1
-                    dic["n_head"] = self.n_head
-                    dic["q_per_kv"] = self.n_head // self.n_kv_head
-                    if (self.n_head % self.n_kv_head) != 0:
-                        raise ValueError("'n_head' is not a multiple of n_kv_head ")
-
                 optim_groups.append(dic)
 
         if count_embd == 0:
             # warning
             print(
-                "=====>>> Warning: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_blocks' of Adam-mini.")
+                "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_blocks' of Adam-mini.")
         if count_output == 0:
             # warning
             print(
-                "=====>>> Warning: No output layer found.  If you are training Transformers, please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini")
+                "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini")
         if count_qk == 0:
             # warning
             print(
-                "=====>>>  Warning: No Query or Key found.  If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+                "=====>>>  Warning by Adam-mini: No Query or Key found.  If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
 
         if count_output + count_embd + count_qk == 0:
             print(
-                "=====>>>  Warning: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
+                "=====>>>  Warning by Adam-mini: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
 
         # embd_blocks, including embd and output layers. Use normal adamW updates for these blocks
         self.embd_blocks = {
-            "embed_tokens", "embed", "embd", "wte", "lm_head", "tok_embeddings", "output.weight"
+             "embed", "embd", "wte", "lm_head.weight",  "output.weight"
         }
         # Query and Keys, will  assign lrs by heads
         self.qk_blocks = {
-            "k_proj.weight", "q_proj.weight", "wq.weight", "wk.weight", "q.weight", "k.weight"
+            "k_proj.weight", "q_proj.weight", "wq.weight", "wk.weight"
         }
-        # fused attn blocks, will separate in to Q, K, V and assign lrs accordingly. This is used in TinyLlama
-        self.fused_attn_blocks = {"attn.attn.weight", "attn.qkv.weight"}
 
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -223,48 +215,6 @@ class Adam_mini(Optimizer):
 
                         update.mul_(lr)
                         p.add_(-update)
-
-                    elif any(block in name for block in
-                             self.fused_attn_blocks):  # this is for the attention implementation in TinyLlama
-                        if p.grad is None:
-                            continue
-                        if (len(state) == 0):
-                            state["m"] = torch.zeros_like(p.data).to(torch.float32)
-                            state["m"] = state["m"].view(group["n_head"], group["q_per_kv"] + 2, -1)
-                            state["iteration"] = 0
-                            state["vmean"] = torch.zeros(group["n_head"], group["q_per_kv"] + 2).to(device)
-
-                        grad = p.grad.data.to(torch.float32)
-                        grad = grad.view(group["n_head"], group["q_per_kv"] + 2, -1)
-
-                        tmp_lr = torch.mean(grad * grad, dim=2).to(device)
-                        state["vmean"].mul_(beta2).add_(tmp_lr, alpha=1 - beta2)
-                        v = state["vmean"]
-
-                        state["iteration"] += 1
-                        if group["weight_decay"] != 0:
-                            p.data.mul_(1 - lr * group["weight_decay"])
-
-                        state["m"].lerp_(grad, 1 - beta1)
-
-                        bias_correction_1 = 1 - beta1 ** state["iteration"]
-                        bias_correction_2 = 1 - beta2 ** state["iteration"]
-                        bias_correction_2_sqrt = math.sqrt(bias_correction_2)
-
-                        h = (v.sqrt() / bias_correction_2_sqrt).add_(eps)
-                        stepsize = ((1 / bias_correction_1) / h).view(group["n_head"], group["q_per_kv"] + 2, 1)
-
-                        update = state["m"] * (stepsize.to(state['m'].device))
-
-                        if p.dim() > 1:
-                            d0, d1 = p.size()
-                            update = update.view(d0, d1)
-                        else:
-                            update = update.view(-1)
-
-                        update.mul_(lr)
-                        p.add_(-update)
-
 
                     else:  # other blocks
                         if (len(state) == 0):
