@@ -33,7 +33,7 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 You can use Adam-mini optimizer as follows. 
 
 ```
-import Adam_mini
+from Adam_mini import Adam_mini
 
 optimizer = Adam_mini(
 		model = model, 

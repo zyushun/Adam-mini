@@ -30,7 +30,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model import GPTConfig, GPT
 from torch.utils.tensorboard import SummaryWriter
-import Adam_mini
+from Adam_mini import Adam_mini
 #import ipdb
 
 import logger
