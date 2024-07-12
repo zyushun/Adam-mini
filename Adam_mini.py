@@ -49,7 +49,8 @@ class Adam_mini(Optimizer):
         optim_groups = []
         count_embd = 0
         count_output = 0
-        count_qk = 0
+        count_q = 0
+        count_k = 0
         for name, param in self.model.named_parameters():
             print('Detected param blocks by Adam-mini:', name, param.size())
             if param.requires_grad:
@@ -68,20 +69,23 @@ class Adam_mini(Optimizer):
                     count_output += 1
 
                 if ("q_proj.weight" in name or "wq.weight" in name):
-                    count_qk += 1
+                    count_q += 1
 
                     dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_head
                     if (self.n_feature * self.n_feature % self.n_head) != 0:
                         raise ValueError("'n_feature * n_feature' is not a multiple of  n_head ")
 
                 if ("k_proj.weight" in name or "wk.weight" in name):
-                    count_qk += 1
+                    count_k += 1
 
                     dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_kv_head
                     if (self.n_feature * self.n_feature % self.n_kv_head) != 0:
                         raise ValueError("'n_feature * n_feature' is not a multiple of  n_kv_head ")
 
                 optim_groups.append(dic)
+
+        print(
+            f'Adam-mini found {count_embd} embedding layers, {count_output} output layers, {count_q} Querys, {count_k} Keys.')
 
         if count_embd == 0:
             # warning
@@ -91,18 +95,23 @@ class Adam_mini(Optimizer):
             # warning
             print(
                 "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini. Please ignore this warning if you are using weight-tying.")
-        if count_qk == 0:
+        if count_q == 0:
             # warning
             print(
-                "=====>>>  Warning by Adam-mini: No Query or Key found.  If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+                "=====>>>  Warning by Adam-mini: No Query found.  If you are training Transformers, please check the name of your Query in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
 
-        if count_output + count_embd + count_qk == 0:
+        if count_k == 0:
+            # warning
+            print(
+                "=====>>>  Warning by Adam-mini: No Key found.  If you are training Transformers, please check the name of your Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+
+        if count_output + count_embd + count_q + count_k == 0:
             print(
                 "=====>>>  Warning by Adam-mini: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
 
         # embd_blocks, including embd and output layers. Use normal adamW updates for these blocks
         self.embd_blocks = {
-             "embed", "embd", "wte", "lm_head.weight",  "output.weight"
+            "embed", "embd", "wte", "lm_head.weight", "output.weight"
         }
         # Query and Keys, will  assign lrs by heads
         self.qk_blocks = {
