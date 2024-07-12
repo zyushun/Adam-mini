@@ -78,9 +78,9 @@ class Adam_mini(Optimizer):
                 if ("k_proj.weight" in name or "wk.weight" in name):
                     count_k += 1
 
-                    dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_kv_head
-                    if (self.n_feature * self.n_feature % self.n_kv_head) != 0:
-                        raise ValueError("'n_feature * n_feature' is not a multiple of  n_kv_head ")
+                    dic["parameter_per_head"] = self.n_feature * self.n_feature // self.n_head
+                    if (self.n_feature * self.n_feature % self.n_head) != 0:
+                        raise ValueError("'n_feature * n_feature' is not a multiple of  n_head ")
 
                 optim_groups.append(dic)
 
