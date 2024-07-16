@@ -20,25 +20,25 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-Our current implementation of Adam-mini supports popular distributed frameworks and codebase including:
-
-1. DDP distributed framework
-2. FSDP distributed framework
-3. [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat) 
-4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
-5. [Torchtitan](https://github.com/pytorch/torchtitan) 
-6. More is coming! Do not hestitate to contact us if Adam-mini does not support your codebase!
-
-
-You can use Adam-mini optimizer as follows. 
+Please run the following commands.
 
 ```
-from Adam_mini import Adam_mini
+git clone https://github.com/zyushun/Adam-mini
+pip install -e .
+```
+
+Note that pytorch is required to be installed for using Adam-mini.
+
+
+After installation, you can use Adam-mini optimizer as follows.
+
+```
+from adam_mini import Adam_mini
 
 optimizer = Adam_mini(
-		model = model, 
-		lr = lr, 
-		betas = (beta1,beta2), 
+		model = model,
+		lr = lr,
+		betas = (beta1,beta2),
 		eps = eps,
 		weight_decay = weight_decay,
 		model_sharding = True,
@@ -48,6 +48,14 @@ optimizer = Adam_mini(
     )
 ```
 
+Our current implementation of Adam-mini supports popular distributed frameworks and codebase including:
+
+1. DDP distributed framework
+2. FSDP distributed framework
+3. [DeepSpeed](https://github.com/microsoft/DeepSpeed)
+4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
+5. [Torchtitan](https://github.com/pytorch/torchtitan) 
+6. More is coming! Do not hesitate to contact us if Adam-mini does not support your codebase!
 
 
 **Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
@@ -63,6 +71,7 @@ If you are training a language model, please pass the following info to Adam-min
 - n_kv_head: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
 
 
+## Examples
 
 We here provide sample code on pre-training, SFT, and RLHF. You need  2xA800-80GB or 2xA100-80GB GPUs to run the experiments below.
 
@@ -73,7 +82,7 @@ We pre-train GPT2 series (125M-1.5B) using [NanoGPT](https://github.com/karpathy
 ```
 conda env create -f gpt2/environment.yml
 conda activate gpt2
-cd gpt2
+cd examples/gpt2
 ```
 
 Run the code for GPT2 pre-training:
@@ -93,7 +102,7 @@ You will get the following curves.
 We here provide a sample code for pre-training  Llama3-8B using [Torchtitan](https://github.com/pytorch/torchtitan) code base under FSDP framework. The codebase also support other models from Llama series such as  Llama2-7B.  Install dependence from pip:
 
 ```
-cd llama3_8b
+cd examples/llama3_8b
 pip install -r requirements.txt
 pip3 install --pre torch==2.5.0.dev20240617  --index-url https://download.pytorch.org/whl/nightly/cu121 #or cu118
 pip3 install --pre torchdata --index-url https://download.pytorch.org/whl/nightly
@@ -137,7 +146,7 @@ We fine-tune Llama2-7B using  [ReMax](https://github.com/liziniu/ReMax) codebase
 ```
 conda env create -f RLHF/environment.yml
 conda activate rlhf
-cd RLHF
+cd examples/RLHF
 ```
 
 Run the code for SFT with LoRA :
