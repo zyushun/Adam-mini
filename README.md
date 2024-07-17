@@ -20,33 +20,47 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-Please run the following commands.
+Install PyTorch and run the following commands.
 
 ```
 git clone https://github.com/zyushun/Adam-mini
 pip install -e .
 ```
 
-Note that pytorch is required to be installed for using Adam-mini.
 
-
-After installation, you can use Adam-mini optimizer as follows.
+Then use Adam-mini optimizer as follows.
 
 ```
 from adam_mini import Adam_mini
 
 optimizer = Adam_mini(
-		model = model,
-		lr = lr,
-		betas = (beta1,beta2),
-		eps = eps,
-		weight_decay = weight_decay,
-		model_sharding = True,
-		n_feature = dim,
-		n_head = n_head,
-		n_kv_head = n_kv_head
-    )
+            named_parameters = model.named_parameters(), 
+            lr=lr, 
+            betas = (beta1,beta2), 
+            weight_decay=weight_decay, 
+            model_sharding=True,
+            dim=model_config.dim,
+            n_heads=model_config.n_heads,
+            n_kv_heads=model_config.n_kv_heads,
+            )
+            
 ```
+
+
+
+**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
+
+If you are training a language model, please pass the following info to Adam-mini:
+
+- model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
+
+- dim: dimension for hidden feature. Could be unspecified if you are training non-transformer models.
+
+- n_heads: number of attention heads. Could be unspecified if you are training non-transformer models.
+
+- n_kv_heads: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
+
+  
 
 Our current implementation of Adam-mini supports popular distributed frameworks and codebase including:
 
@@ -56,19 +70,6 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
 5. [Torchtitan](https://github.com/pytorch/torchtitan) 
 6. More is coming! Do not hesitate to contact us if Adam-mini does not support your codebase!
-
-
-**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
-
-
-
-If you are training a language model, please pass the following info to Adam-mini:
-
-- model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
-
-- n_feature: dimension for hidden feature. Could be unspecified if you are training non-transformer models.
-- n_head: number of attention heads. Could be unspecified if you are training non-transformer models.
-- n_kv_head: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
 
 
 ## Examples
@@ -120,7 +121,7 @@ python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Meta-Llama
 python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Llama-2-13b-hf --hf_token=...
 ```
 
-Change your data path in ./train_configs/llama3_8b_mini.toml. 
+Change your data path in ./train_configs/llama3_8b_mini.toml.  To debug, you can download the small dataset "c4_mini" via [GoogleDrive](https://drive.google.com/drive/folders/1B16KpuhUyz4p7mwc9xmRHuyCY37dAw-2?usp=sharing) and put it under the path "./torchtitan/datasets/c4_mini/". 
 
 ```
 dataset = "c4" #for debug can use "c4_mini"

@@ -116,13 +116,15 @@ def build_optimizers(model_parts, job_config: JobConfig, world_mesh=None):
             optimizer = torch.optim.AdamW(model.parameters(), **optimizer_kwargs)
             logger.info(f"======>>>>> Using AdamW optimizer, lr = {lr}")
         elif name == "adam_mini":
-            optimizer = Adam_mini(model, lr=lr, 
-            betas = (0.9,0.95), 
-            weight_decay=0.1, 
-            model_sharding=True,
-            n_feature=model_config.dim,
-            n_head=model_config.n_heads,
-            n_kv_head=model_config.n_kv_heads,
+            optimizer = Adam_mini(
+                named_parameters=model.named_parameters(),
+                lr=lr,
+                betas=(0.9, 0.95),
+                weight_decay=0.1,
+                model_sharding=True,
+                dim=model_config.dim,
+                n_heads=model_config.n_heads,
+                n_kv_heads=model_config.n_kv_heads,
             )
             logger.info(f"======>>>>> Using Adam-mini optimizer, lr = {lr} ")
        

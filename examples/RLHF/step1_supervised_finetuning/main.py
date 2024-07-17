@@ -435,14 +435,15 @@ def main():
     )
 
     if args.optimizer == "adam_mini":
-        optimizer = Adam_mini(model = model,
-                              lr=args.learning_rate,
-                              betas=(0.9, 0.95),
-                              weight_decay=args.weight_decay,
-                              model_sharding=args.zero_stage != 0,
-                              n_feature=4096,
-                              n_head=32
-                              )
+        optimizer = Adam_mini(
+            named_parameters=model.named_parameters(),
+            lr=args.learning_rate,
+            betas=(0.9, 0.95),
+            weight_decay=args.weight_decay,
+            model_sharding=args.zero_stage != 0,
+            dim=4096,
+            n_heads=32
+        )
         ds_config["zero_allow_untested_optimizer"] = True
         ds_config["zero_force_ds_cpu_optimizer"] = False
     else:
