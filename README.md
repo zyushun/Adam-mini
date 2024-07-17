@@ -35,13 +35,14 @@ from adam_mini import Adam_mini
 
 optimizer = Adam_mini(
             named_parameters = model.named_parameters(), 
-            lr=lr, 
+            lr = lr, 
             betas = (beta1,beta2), 
-            weight_decay=weight_decay, 
-            model_sharding=True,
-            dim=model_config.dim,
-            n_heads=model_config.n_heads,
-            n_kv_heads=model_config.n_kv_heads,
+            eps = eps,
+            weight_decay = weight_decay, 
+            model_sharding = True,
+            dim = model_config.dim,
+            n_heads = model_config.n_heads,
+            n_kv_heads = model_config.n_kv_heads,
             )
             
 ```
@@ -188,9 +189,17 @@ You will get the following curves.
  def create_optimizer(self) -> "torch.optim.Optimizer":
         if self.optimizer is None:
             if (self.finetuning_args.use_adammini):
-                self.optimizer = Adam_mini(model = self.model, lr = self.args.learning_rate, weight_decay = self.args.weight_decay, 
-                                           beta1 = self.args.adam_beta1, beta2 = self.args.adam_beta2, model_sharding = True, 
-                                           n_embd = 4096, n_head = 32, n_query_groups = 32)
+                self.optimizer = Adam_mini(
+            named_parameters = model.named_parameters(), 
+            lr = lr, 
+            betas = (beta1,beta2), 
+            eps = eps,
+            weight_decay = weight_decay, 
+            model_sharding = True,
+            dim = model_config.dim,
+            n_heads = model_config.n_heads,
+            n_kv_heads = model_config.n_kv_heads,
+            )
         return super().create_optimizer()
 ```
 
