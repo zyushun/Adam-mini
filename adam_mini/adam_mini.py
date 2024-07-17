@@ -75,7 +75,7 @@ class Adam_mini(torch.optim.Optimizer):
         for param_name, param in named_parameters:
             if not param.requires_grad:
                 continue
-            # print('Detected param blocks by Adam-mini:', param_name)
+            print('Adam-mini found the param block with name:', param_name)
             state = {}
             state["name"] = param_name
             state["params"] = param
