@@ -20,7 +20,7 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 ## How to use 
 
-Install PyTorch and run the following commands.
+Install torch (>=1.8.0) and run the following commands.
 
 ```
 git clone https://github.com/zyushun/Adam-mini
