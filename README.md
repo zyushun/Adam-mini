@@ -23,9 +23,16 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 Install torch (>=1.8.0) and run the following commands.
 
 ```
-pip install adam_mini
+pip install adam-mini
 ```
 
+or if you prefer to import from source
+
+```
+git clone https://github.com/zyushun/Adam-mini
+cd Adam-mini
+pip install -e .
+```
 
 Then use Adam-mini optimizer as follows.
 
