@@ -23,8 +23,7 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 Install torch (>=1.8.0) and run the following commands.
 
 ```
-git clone https://github.com/zyushun/Adam-mini
-pip install -e .
+pip install adam_mini
 ```
 
 
