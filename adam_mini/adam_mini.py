@@ -131,7 +131,11 @@ class Adam_mini(torch.optim.Optimizer):
         super().__init__(optim_groups, defaults)
 
     @torch.no_grad()
-    def step(self):
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
         for group in self.param_groups:
             beta1 = group["beta1"]
             beta2 = group["beta2"]
@@ -254,3 +258,4 @@ class Adam_mini(torch.optim.Optimizer):
                     update = state["m"] * (stepsize.to(state["m"].device))
                     update.mul_(lr)
                     p.add_(-update)
+        return loss
