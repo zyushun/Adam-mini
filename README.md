@@ -234,8 +234,8 @@ You will get the following curves.
 ## Acknowledgements
 
 1. The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [Torchtitan](https://github.com/pytorch/torchtitan),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
-2. We'd like to express our gratitude to [@lessw2020](https://github.com/lessw2020) and [@awgu](https://github.com/awgu) for the support on [Torchtitan](https://github.com/pytorch/torchtitan) and the great suggestions for refactoring the code of Adam-mini.
-3. We'd like to express our gratitude to [@Mrw33554432](https://github.com/Mrw33554432) for the pull request to pip install.
+2. We'd like to express our gratitude to [@lessw2020](https://github.com/lessw2020) and [@awgu](https://github.com/awgu) for the support on [Torchtitan](https://github.com/pytorch/torchtitan) and the great suggestions for refactoring the code of Adam-mini!
+3. We'd like to express our gratitude to [@Mrw33554432](https://github.com/Mrw33554432) for the pull request to pip install!
 4. We'd like to express our gratitude to [@relic-yuexi](https://github.com/relic-yuexi) for the pull request to  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory)! 
 
 ## Citation
