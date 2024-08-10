@@ -67,7 +67,9 @@ If you are training a language model, please pass the following info to Adam-min
 
 - n_kv_heads: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups".  If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
 
-  
+
+
+## Support
 
 Our current implementation of Adam-mini supports popular distributed frameworks and codebase including:
 
@@ -76,7 +78,10 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 3. [DeepSpeed](https://github.com/microsoft/DeepSpeed)
 4. [Hugginface Trainer](https://huggingface.co/docs/transformers/en/main_classes/trainer) 
 5. [Torchtitan](https://github.com/pytorch/torchtitan) 
-6. More is coming! Do not hesitate to contact us if Adam-mini does not support your codebase!
+6. [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory). Detailed usage instruction can be seen in  [examples](https://github.com/hiyouga/LLaMA-Factory/blob/main/examples/README_zh.md) 
+7. More is coming! Do not hesitate to contact us if Adam-mini does not support your codebase!
+
+
 
 
 ## Examples
@@ -218,9 +223,20 @@ You will get the following curves.
 **About CPU offload:** Our current implementation of Adam-mini supports CPU offload in FSDP, while it does not support CPU offload in DeepSpeed.  Please turn off offload when using DeepSpeed. We will resolve this issue soon.
 
 
+
+## Changelog
+
+[24/08/09] We now support the Adam-mini in  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) .
+
+[24/07/21] We now support the Adam-mini by pip install
+
+
 ## Acknowledgements
 
-The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [Torchtitan](https://github.com/pytorch/torchtitan),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
+1. The above code is heavily based on the codebase of [NanoGPT](https://github.com/karpathy/nanoGPT),  [Torchtitan](https://github.com/pytorch/torchtitan),  [ReMax](https://github.com/liziniu/ReMax), and [DeepSpeed](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat). 
+2. We'd like to express our gratitude to [@lessw2020](https://github.com/lessw2020) and [@awgu](https://github.com/awgu) for the support on [Torchtitan](https://github.com/pytorch/torchtitan) and the great suggestions for refactoring the code of Adam-mini.
+3. We'd like to express our gratitude to [@Mrw33554432](https://github.com/Mrw33554432) for the pull request to pip install.
+4. We'd like to express our gratitude to [@relic-yuexi](https://github.com/relic-yuexi) for the pull request to  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory)! 
 
 ## Citation
 

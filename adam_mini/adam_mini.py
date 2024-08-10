@@ -18,7 +18,7 @@ class Adam_mini(torch.optim.Optimizer):
             eps: float = 1e-8,
             weight_decay: float = 0,
             *,
-            model_sharding: bool = False,
+            model_sharding: bool = True,
             dim: int = 2048,
             n_heads: int = 32,
             n_kv_heads: Optional[int] = None,
@@ -103,20 +103,20 @@ class Adam_mini(torch.optim.Optimizer):
         if count_embd == 0:
             # warning
             print(
-                "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_blocks' of Adam-mini.")
+                "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.embd_names.add('the name of your embedding layer'). ")
         if count_output == 0:
             # warning
             print(
-                "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.embd_blocks' of Adam-mini. Please ignore this warning if you are using weight-tying.")
+                "=====>>> Warning by Adam-mini: No output layer found.  If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.embd_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.embd_names.add('the name of your output layer').  Please ignore this warning if you are using weight-tying.")
         if count_wq == 0:
             # warning
             print(
-                "=====>>>  Warning by Adam-mini: No Query found.  If you are training Transformers, please check the name of your Query in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+                "=====>>>  Warning by Adam-mini: No Query found.  If you are training Transformers, please check the name of your Query in attention blocks and manually add them to 'self.wqk_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.wqk_names.add('the name of your Query'). ")
 
         if count_wk == 0:
             # warning
             print(
-                "=====>>>  Warning by Adam-mini: No Key found.  If you are training Transformers, please check the name of your Key in attention blocks and manually add them to 'self.qk_blocks' of Adam-mini")
+                "=====>>>  Warning by Adam-mini: No Key found.  If you are training Transformers, please check the name of your Key in attention blocks and manually add them to 'self.wqk_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.wqk_names.add('the name of your Key').")
 
         if count_output + count_embd + count_wq + count_wk == 0:
             print(
