@@ -10,7 +10,7 @@ We find a cheap and effective way to reach these requirements. The resulting alg
 
 
 
-![figure1](/Users/zhangyushun/OneDrive - CUHK-Shenzhen/adam-mini/github/0904/Adam-mini/figures/figure1.png)
+<img src="figures/figure1.png" style="zoom:40%;" />
 
 
 
