@@ -1,5 +1,5 @@
 # Adam-mini
-This repository contains PyTorch implementation of Adam-mini,  a mini-version of Adam that achieves on-par or better performance than AdamW with **45% to 50%** less memory footprint.  
+This repository contains the official PyTorch implementation of Adam-mini optimizer,  a mini-version of Adam that achieves on-par or better performance than AdamW with **45% to 50%** less memory footprint.  
 
 Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e.,  $1/\sqrt{v}$): we argue that >90% of these lr in $v$ could be harmlessly removed if we:
 
@@ -7,6 +7,12 @@ Adam-mini reduces memory by cutting down the learning rate (lr) resources in Ada
 (2) assign a single **but good** lr to each parameter block.  
 
 We find a cheap and effective way to reach these requirements. The resulting algorithm is shown below in **Algorithm 1**. Check out more detailed descriptions in our paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
+
+
+
+![figure1](/Users/zhangyushun/OneDrive - CUHK-Shenzhen/adam-mini/github/0904/Adam-mini/figures/figure1.png)
+
+
 
 <img src="figures/illustration.png" style="zoom:40%;" />
 
@@ -45,7 +51,6 @@ optimizer = Adam_mini(
             betas = (beta1,beta2), 
             eps = eps,
             weight_decay = weight_decay, 
-            model_sharding = True,
             dim = model_config.dim,
             n_heads = model_config.n_heads,
             n_kv_heads = model_config.n_kv_heads,
@@ -55,11 +60,9 @@ optimizer = Adam_mini(
 
 
 
-**Regarding all the hyperparameters** including learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
+**Hyperparameter choices:** Regarding learning rate (lr), weight_decay, beta1, beta2, eps, we recommend using the same values as those used for AdamW.
 
-If you are training a language model, please pass the following info to Adam-mini:
-
-- model_sharding: set to True if you are using model parallelism with more than 1 GPU, including FSDP and zero_1,2,3 in Deepspeed. Set to False if you are using DDP or single-GPU training.
+If you are training Transformers, please also pass the following info to Adam-mini:
 
 - dim: dimension for hidden feature. Could be unspecified if you are training non-transformer models.
 
@@ -150,6 +153,8 @@ You will get the following curve.
 
 <img src="figures/loss_llama3_8b.png" style="zoom:100%;" />
 
+
+
 We also pre-train Llama series using [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase. But some unexpected error occurs when saving checkpoint after the training. We are now working on this issue and hopefully we can fully support  [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase soon. If you are interested in pre-trianing Llama series, please first try  [Torchtitan](https://github.com/pytorch/torchtitan) code base as above.
 
 ### Example 2: Llama2-7B Supervised Fine-tuning and RLHF 
@@ -226,7 +231,9 @@ You will get the following curves.
 
 ## Changelog
 
-[24/08/09] We now support the Adam-mini in  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) .
+[24/09/04] We update Adam-mini to version 1.0.3 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We deprecate the argument "model_sharding". We will assume that  model parallelism is always used and "model_sharding" is always set True. We will remove this argument in the future version.
+
+[24/08/09] We now support the Adam-mini in  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory).
 
 [24/07/21] We now support the Adam-mini by pip install
 
@@ -237,6 +244,7 @@ You will get the following curves.
 2. We'd like to express our gratitude to [@lessw2020](https://github.com/lessw2020) and [@awgu](https://github.com/awgu) for the support on [Torchtitan](https://github.com/pytorch/torchtitan) and the great suggestions for refactoring the code of Adam-mini!
 3. We'd like to express our gratitude to [@Mrw33554432](https://github.com/Mrw33554432) for the pull request to pip install!
 4. We'd like to express our gratitude to [@relic-yuexi](https://github.com/relic-yuexi) for the pull request to  [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory)! 
+5. We'd like to express our gratitude to [@Ashwanth369](https://github.com/Ashwanth369)  for the pull request to  [Huggingface Transformers](https://github.com/huggingface/transformers)! 
 
 ## Citation
 
