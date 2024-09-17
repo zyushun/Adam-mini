@@ -32,6 +32,7 @@ class Adam_mini(torch.optim.Optimizer):
             dim: int = 2048,
             n_heads: int = 32,
             n_kv_heads: Optional[int] = None,
+            verbose=True,
     ):
 
         '''
@@ -102,7 +103,7 @@ class Adam_mini(torch.optim.Optimizer):
         if not self.n_kv_heads == int(self.n_kv_heads):
             raise ValueError("Invalid n_kv_heads value: {}".format(self.n_kv_heads))
 
-        if model_sharding is not None:
+        if model_sharding is not None and verbose:
             print(
                 "UserWarning: model_sharding is deprecated since version 1.0.2. This argument is always set True. We will remove this argument in the future version.")
 
@@ -121,7 +122,8 @@ class Adam_mini(torch.optim.Optimizer):
         for param_name, param in named_parameters:
             if not param.requires_grad:
                 continue
-            print('Adam-mini found the param block with name:', param_name)
+            if verbose:
+                print('Adam-mini found the param block with name:', param_name)
             state = {}
             state["name"] = param_name
             state["params"] = param
@@ -142,24 +144,24 @@ class Adam_mini(torch.optim.Optimizer):
                 state["neuron_numel"] = self.dim
 
             optim_groups.append(state)
+        if verbose:
+            print(
+                f'Adam-mini found {count_embd} embedding layers, {count_output} output layers, {count_wqk} Querys and Keys.')
 
-        print(
-            f'Adam-mini found {count_embd} embedding layers, {count_output} output layers, {count_wqk} Querys and Keys.')
-
-        if count_embd == 0:
+        if count_embd == 0 and verbose:
             # warning
             print(
                 "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.embd_names.add('the name of your embedding layer'). ")
-        if count_output == 0:
+        if count_output == 0 and verbose:
             # warning
             print(
                 "=====>>> Warning by Adam-mini: No output layer found. If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.output_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.output_names.add('the name of your output layer').  Please ignore this warning if you are using weight-tying.")
-        if count_wqk == 0:
+        if count_wqk == 0 and verbose:
             # warning
             print(
                 "=====>>>  Warning by Adam-mini: No Query or Key found. If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.wqk_names' of Adam-mini. You can do this by adding two additional lines of code: optimizer.wqk_names.add('the name of your Query' ); optimizer.wqk_names.add('the name of your Key'). ")
 
-        if count_output + count_embd + count_wqk == 0:
+        if (count_output + count_embd + count_wqk == 0) and verbose:
             print(
                 "=====>>>  Warning by Adam-mini: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
 
