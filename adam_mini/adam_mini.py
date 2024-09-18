@@ -36,7 +36,7 @@ class Adam_mini(torch.optim.Optimizer):
     ):
 
         '''
-        This is the official implementation of Adam-mini (version 1.0.3).
+        This is the official implementation of Adam-mini (version 1.0.4).
 
         Paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
@@ -61,6 +61,7 @@ class Adam_mini(torch.optim.Optimizer):
 
             n_kv_heads (`int`, *optional*, defaults to None): Number of heads for Key and Value. Or equivalently, number of query groups in Group Query Attention. Also known as "n_query_groups". If not specified, it will be equal to n_head. Can be left unspecified if training non-transformer models.
 
+            verbose (`bool`, *optional*, defaults to True): Print all the logs if true.
         Example:
 
         ```python
@@ -140,8 +141,9 @@ class Adam_mini(torch.optim.Optimizer):
                 assert (self.dim * self.dim) % self.n_heads == 0, f"{self.dim} {self.n_heads}"
                 state["head_numel"] = self.dim * self.dim // self.n_heads
 
-            if any(mlp_name in param_name for mlp_name in self.mlp_names):
-                state["neuron_numel"] = self.dim
+            # assume grad is a matrix by default, so do not need this
+            # if any(mlp_name in param_name for mlp_name in self.mlp_names):
+            #     state["neuron_numel"] = self.dim
 
             optim_groups.append(state)
         if verbose:
@@ -193,7 +195,7 @@ class Adam_mini(torch.optim.Optimizer):
                         state["step"] = 0
                         state["v"] = torch.zeros_like(p, memory_format=torch.preserve_format)
 
-                    grad = p.grad  # .to(torch.float32)
+                    grad = p.grad
                     state["v"].mul_(beta2).addcmul_(grad, grad.conj(), value=1 - beta2)
                     state["step"] += 1
                     if group["weight_decay"] > 0.0:
@@ -217,7 +219,7 @@ class Adam_mini(torch.optim.Optimizer):
                         state["step"] = 0
                         # NOTE: We must use `zeros_like` for vmean to be a
                         # DTensor (not `torch.Tensor`) for DTensor parameters.
-                        # state["vmean"] = torch.zeros(state["head"])
+                        # the following line is equivalent to: state["vmean"] = torch.zeros(state["head"])
                         state["vmean"] = torch.zeros_like(state["m"][0:state["head_per_gpu"], 0:1],
                                                           memory_format=torch.preserve_format)
 
@@ -244,21 +246,23 @@ class Adam_mini(torch.optim.Optimizer):
                          self.mlp_names):  # MLP blocks. If True, then Adam-mini will use one lr per output neuron. This will avoid all_reduce when the single MLP block is sharded on different GPUs. However, we find this design will not boost performance. By default, we will not enter here
                     if p.grad is None:
                         continue
-                    neuron_numel = group["neuron_numel"]
+                    #neuron_numel = group["neuron_numel"] # assume grad is a matrix by default, so do not need this
                     if len(state) == 0:
-                        state["m"] = torch.zeros_like(p, memory_format=torch.preserve_format).view(-1, neuron_numel)
+                        state["m"] = torch.zeros_like(p.grad, memory_format=torch.preserve_format) # assume grad is a matrix by default, no need to view
+                        # state["m"] = torch.zeros_like(p, memory_format=torch.preserve_format).view(-1, neuron_numel)
                         state["step"] = 0
                         state["neuron_per_gpu"] = state["m"].size(0)  # this is neuron per gpu
                         # NOTE: We must use `new_zeros` for vmean to be a
                         # DTensor (not `torch.Tensor`) for DTensor parameters.
-                        # state["vmean"] = torch.zeros(1, device=p.device)
-                        # state["vmean"] = p.new_zeros(1)
+                        # for standard tensor: state["vmean"] = torch.zeros(1, device=p.device)
+                        # for DTensor: state["vmean"] = p.new_zeros(1)
+                        # the following implementation unifies the above two lines
                         state["vmean"] = torch.zeros_like(state["m"][0:state["neuron_per_gpu"], 0:1],
                                                           memory_format=torch.preserve_format)
 
                     grad = p.grad  # .to(torch.float32)
                     neuron_per_gpu = state["neuron_per_gpu"]
-                    grad = grad.view(neuron_per_gpu, neuron_numel)
+                    # grad = grad.view(neuron_per_gpu, neuron_numel) # assume grad is a matrix by default, so no need to reshape
                     tmp_lr = torch.mean(grad * grad, dim=1, keepdim=True)
 
                     state["vmean"].mul_(beta2).add_(tmp_lr, alpha=1 - beta2)
@@ -297,8 +301,9 @@ class Adam_mini(torch.optim.Optimizer):
                         state["reduced"] = reduced
                         # NOTE: We must use `new_zeros` for vmean to be a
                         # DTensor (not `torch.Tensor`) for DTensor parameters.
-                        # state["vmean"] = torch.zeros(1, device=p.device)
-                        # state["vmean"] = p.new_zeros(1)
+                        # For standard tensor: state["vmean"] = torch.zeros(1, device=p.device)
+                        # For DTensor: state["vmean"] = p.new_zeros(1)
+                        # the following implementation unifies the above two lines
                         state["vmean"] = torch.zeros_like(torch.sum(p * p), memory_format=torch.preserve_format)
                         state["block_numel"] = block_numel.item()
                     if p.grad is None:
@@ -308,15 +313,32 @@ class Adam_mini(torch.optim.Optimizer):
                         tmp_lr = torch.sum(grad * grad)
 
                     if (state["reduced"]):
-                        if "device_mesh" in dir(tmp_lr):
-                            # when tmp_lr is a  DTensor in TorchTitan
-                            lr_local = tmp_lr.to_local()
-                            dist.all_reduce(lr_local, op=dist.ReduceOp.SUM)
-                            tmp_lr.redistribute(placements=[Replicate()])
+                        # Force communication over GPUs when GPUs are available
+                        if tmp_lr.device.type == 'cpu':
+                            # Move the tensor to the current GPU device
+                            tmp_lr_gpu = tmp_lr.to(torch.cuda.current_device())
+
+                            if "device_mesh" in dir(tmp_lr):
+                                # when tmp_lr is a  DTensor in TorchTitan
+                                lr_local = tmp_lr.to_local()
+                                dist.all_reduce(lr_local, op=dist.ReduceOp.SUM)
+                                tmp_lr.redistribute(placements=[Replicate()])
+                            else:
+                                # when tmp_lr is a  standard tensor
+                                dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
+
+                            # Move the result back to the CPU tensor
+                            tmp_lr.copy_(tmp_lr_gpu.cpu())
                         else:
-                            # when tmp_lr is a  standard tensor
-                            # print(f"...... dist all reduce.......")
-                            dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
+                            # Tensor is already on GPU, use NCCL backend
+                            if "device_mesh" in dir(tmp_lr):
+                                # when tmp_lr is a  DTensor in TorchTitan
+                                lr_local = tmp_lr.to_local()
+                                dist.all_reduce(lr_local, op=dist.ReduceOp.SUM)
+                                tmp_lr.redistribute(placements=[Replicate()])
+                            else:
+                                # when tmp_lr is a  standard tensor
+                                dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
 
                     if (p.grad is None):
                         continue

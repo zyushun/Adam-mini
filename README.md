@@ -45,7 +45,6 @@ optimizer = Adam_mini(
             dim = model_config.dim,
             n_heads = model_config.n_heads,
             n_kv_heads = model_config.n_kv_heads,
-            verbose=True,
             )
 
 ```
@@ -204,11 +203,15 @@ You will get the following curves.
 
 ## Changelog
 
-[24/09/04] We update Adam-mini to version 1.0.3 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We deprecate the argument "model_sharding". We will assume that model parallelism is always used and "model_sharding" is always set True. We will remove this argument in the future version.
+[24/06/26] We are online!
+
+[24/07/21] We now support the Adam-mini by pip install
 
 [24/08/09] We now support the Adam-mini in [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory).
 
-[24/07/21] We now support the Adam-mini by pip install
+[24/09/04] We update Adam-mini to version 1.0.3 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We deprecate the argument "model_sharding". We will assume that model parallelism is always used and "model_sharding" is always set True. We will remove this argument in the future version.
+
+[24/09/18] We update Adam-mini to version 1.0.4 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We add the argument "verbose" to allow manually mute the logs by Adam-mini. We support CPU-offload in FSDP.
 
 ## Acknowledgements
 
@@ -217,6 +220,7 @@ You will get the following curves.
 3. We'd like to express our gratitude to [@Mrw33554432](https://github.com/Mrw33554432) for the pull request to pip install!
 4. We'd like to express our gratitude to [@relic-yuexi](https://github.com/relic-yuexi) for the pull request to [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory)!
 5. We'd like to express our gratitude to [@Ashwanth369](https://github.com/Ashwanth369) for the pull request to [Huggingface Transformers](https://github.com/huggingface/transformers)!
+6. We'd like to express our gratitude to [@minienglish1](https://github.com/minienglish1) for the suggestions on  CPU-offload ([Issue #28](https://github.com/zyushun/Adam-mini/issues/28))! 
 
 ## Citation
 
