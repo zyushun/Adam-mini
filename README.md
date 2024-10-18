@@ -134,6 +134,9 @@ Then we can kick off the training.
 ```
 bash run_llama_3_8b.sh
 bash run_llama_2_13b.sh
+
+#after creating the optimizer
+optimizer.wv_names = {} # For these experiments, we apply a single lr for Value and find it performs a bit better
 ```
 
 You will get the following curves.
