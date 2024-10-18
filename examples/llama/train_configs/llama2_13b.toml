@@ -1,0 +1,61 @@
+# torchtitan Config.toml
+# NOTE: this toml config is a preset for 64 A100 GPUs.
+
+[job]
+dump_folder = "./outputs"
+description = "Llama2 13B training"
+
+[profiling]
+enable_profiling = false
+save_traces_folder = "profile_trace"
+profile_freq = 100
+
+[metrics]
+log_freq = 1
+enable_tensorboard = true
+save_tb_folder = "tb"
+enable_color_printing = false
+enable_wandb = true
+wandb_comment =  ""
+
+[model]
+name = "llama2"
+flavor = "13B"
+norm_type = "fused_rmsnorm"  # [layernorm, np_layernorm, rmsnorm, fused_rmsnorm]
+tokenizer_path = "path/tokenizer.model"
+
+[optimizer]
+name = "adam_mini" #"AdamW" 
+lr = 1e-4
+
+[training]
+batch_size = 2 #total_bs = grad_accumulation_steps * batch_size * num_gpus
+seq_len = 2048 
+warmup_steps = 100  # lr scheduler warm up, normally 1% of the train steps
+max_norm = 1.0  # grad norm clipping
+steps =  10000
+data_parallel_degree = -1
+tensor_parallel_degree = 1
+fp8_linear = ""
+compile = false
+dataset = "my_c4" #"c4"
+dataset_path = "path/c4" # "./torchtitan/datasets/c4_mini/"
+grad_accumulation_steps =  1  #  total_bs = grad_accumulation_steps * batch_size * num_gpus
+
+
+
+[experimental]
+pipeline_parallel_degree = 1
+
+[checkpoint]
+enable_checkpoint = false
+folder = "path/llama2_13B" 
+interval_type = "steps"
+interval = 50000000
+model_weights_only = false
+export_dtype = "float32"
+async_mode = "disabled" # ["disabled", "async", "async_with_pinned_mem"]
+
+[activation_checkpoint]
+mode = 'none'  # ['none', 'selective', 'full'] # for Adam-mini we can use none, will be faster
+selective_ac_option = 'op'  # 'int' = ac every positive int layer or 'op', ac based on ops policy

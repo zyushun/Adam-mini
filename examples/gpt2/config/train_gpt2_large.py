@@ -11,8 +11,8 @@ n_embd = 1280
 dropout = 0.0 # for pretraining 0 is good, for finetuning try 0.1+
 bias = False
 
-max_iters = 100000
-lr_decay_iters = 100000
+max_iters = 30800 # by Chinchilla's law: #tokens = 20 * # model parameters
+lr_decay_iters = 30800
 
 # eval stuff
 eval_interval = 20
@@ -29,7 +29,7 @@ beta2 = 0.95
 grad_clip = 1.0 # clip gradients at this value, or disable if == 0.0
 # learning rate decay settings
 decay_lr = True # whether to decay the learning rate
-warmup_iters = 2000 # how many steps to warm up for
+warmup_iters = 308 # 1% total steps
 min_lr = 1e-5 
 
 

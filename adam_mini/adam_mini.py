@@ -36,7 +36,7 @@ class Adam_mini(torch.optim.Optimizer):
     ):
 
         '''
-        This is the official implementation of Adam-mini (version 1.0.4).
+        This is the official implementation of Adam-mini (version 1.1.0).
 
         Paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
@@ -78,7 +78,7 @@ class Adam_mini(torch.optim.Optimizer):
         ```
 
         '''
-
+        self.named_parameters = named_parameters
         self.dim = dim
         self.n_heads = n_heads
         if n_kv_heads is not None:
@@ -88,7 +88,9 @@ class Adam_mini(torch.optim.Optimizer):
             self.n_kv_heads = n_heads
 
         self.world_size = torch.cuda.device_count()
-
+        self.verbose = verbose
+        self.check_block_name = True
+        self.head_numel = self.dim * self.dim // self.n_heads
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= betas[0] < 1.0:
@@ -106,25 +108,31 @@ class Adam_mini(torch.optim.Optimizer):
 
         if model_sharding is not None and verbose:
             print(
-                "UserWarning: model_sharding is deprecated since version 1.0.2. This argument is always set True. We will remove this argument in the future version.")
+                "Warning by Adam-mini: model_sharding is deprecated since version 1.0.2. This argument is always set True. We will remove this argument in the future version.")
 
-        # Embedding layer. Use AdamW updates for this block
-        self.embd_names = {"embed", "embd", "wte"}
-        # Output layers. Use AdamW updates for this block
-        self.output_names = {"lm_head.weight", "output.weight"}
-        # Query and Keys, will  assign lrs by heads
+        # Embedding layer. Use one lr per token
+        self.embd_names = {"embed", "embd", "wte"}  # move to mlp
+        # Output layers. Use one lr per token
+        self.output_names = {"lm_head.weight", "output.weight"}  # move output to mlp
+        # Query and Keys. User one lr per head
         self.wqk_names = {"k_proj.weight", "q_proj.weight", "wq.weight", "wk.weight"}
-        # MLPs
-        # self.mlp_names = {"feed_forward.w1.weight", "feed_forward.w2.weight", "feed_forward.w3.weight"}
-        self.mlp_names = {}  # Default empty. We will use one learning rate for one layer in MLP block. If not empty, we will use per-neuron vmean for MLPs. Our ablation study shows that using one lr is the same as using per-neuron lr for MLPs.
+        # Values. Use one lr per neuron
+        # it is okay to set self.wv_names to be empty and use a single lr for the whole v. But this  will bring extra all_reduce operations
+        self.wv_names = {"v_proj.weight", "wv.weight"}
+        # attn_proj. Use one lr per neuron
+        self.attn_proj_names = {"o_proj.weight", "wo.weight", "attn.proj.weight"}
+        # MLPs. Use one lr per neuron
+        self.mlp_names = {"feed_forward", "linear", "mlp"}
+        # Blocks that use Adam. For old versions before v.1.1.0, this is for embedding layer and output layer. For the current version, this is empty
+        self.adam_block_names = {}
 
         optim_groups = []
-        count_embd = count_output = count_wqk = 0
+        # count_embd = count_output = count_wqk = 0
         for param_name, param in named_parameters:
             if not param.requires_grad:
                 continue
             if verbose:
-                print('Adam-mini found the param block with name:', param_name)
+                print('Adam-mini found the param block with name:', param_name, param.size())
             state = {}
             state["name"] = param_name
             state["params"] = param
@@ -132,6 +140,22 @@ class Adam_mini(torch.optim.Optimizer):
                 state["weight_decay"] = 0.0
             else:
                 state["weight_decay"] = weight_decay
+
+            optim_groups.append(state)
+
+        defaults = dict(lr=lr, beta1=betas[0], beta2=betas[1], eps=eps)
+        super().__init__(optim_groups, defaults)
+
+    def count_block(self):
+        count_embd = 0
+        count_output = 0
+        count_wqk = 0
+        count_wv = 0
+        count_attn_proj = 0
+        count_mlp = 0
+        for param_name, param in self.named_parameters:
+            if not param.requires_grad:
+                continue
             if any(embd_name in param_name for embd_name in self.embd_names):
                 count_embd += 1
             if any(output_name in param_name for output_name in self.output_names):
@@ -139,39 +163,54 @@ class Adam_mini(torch.optim.Optimizer):
             if any(wqk_name in param_name for wqk_name in self.wqk_names):
                 count_wqk += 1
                 assert (self.dim * self.dim) % self.n_heads == 0, f"{self.dim} {self.n_heads}"
-                state["head_numel"] = self.dim * self.dim // self.n_heads
-
-            # assume grad is a matrix by default, so do not need this
-            # if any(mlp_name in param_name for mlp_name in self.mlp_names):
-            #     state["neuron_numel"] = self.dim
-
-            optim_groups.append(state)
-        if verbose:
+            if any(wv_name in param_name for wv_name in self.wv_names):
+                count_wv += 1
+            if any(attn_proj_name in param_name for attn_proj_name in self.attn_proj_names):
+                count_attn_proj += 1
+            if any(mlp_name in param_name for mlp_name in self.mlp_names):
+                count_mlp += 1
+        if self.verbose:
             print(
-                f'Adam-mini found {count_embd} embedding layers, {count_output} output layers, {count_wqk} Querys and Keys.')
+                f'Adam-mini found {count_embd} embedding layers, {count_output} output layers; {count_wqk} Querys and Keys;  {count_wv} Values;  {count_attn_proj} attn_proj;  {count_mlp} MLPs;')
 
-        if count_embd == 0 and verbose:
+        if count_embd == 0 and self.verbose:
             # warning
             print(
-                "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.embd_names.add('the name of your embedding layer'). ")
-        if count_output == 0 and verbose:
+                "=====>>> Warning by Adam-mini: No embedding layer found. If you are training Transformers, please check the name of your embedding layer and manually add them to 'self.embd_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.embd_names.add('the keywords in the name of your embedding layer'). ")
+        if count_output == 0 and self.verbose:
             # warning
             print(
-                "=====>>> Warning by Adam-mini: No output layer found. If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.output_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.output_names.add('the name of your output layer').  Please ignore this warning if you are using weight-tying.")
-        if count_wqk == 0 and verbose:
+                "=====>>> Warning by Adam-mini: No output layer found. If you are training Transformers (without weight-tying), please check the name of your output layer and manually add them to 'self.output_names' of Adam-mini. You can do this by adding an additional line of code: optimizer.output_names.add('the keywords in the  name of your output layer').  Please ignore this warning if you are using weight-tying.")
+        if count_wqk == 0 and self.verbose:
             # warning
             print(
-                "=====>>>  Warning by Adam-mini: No Query or Key found. If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.wqk_names' of Adam-mini. You can do this by adding two additional lines of code: optimizer.wqk_names.add('the name of your Query' ); optimizer.wqk_names.add('the name of your Key'). ")
+                "=====>>>  Warning by Adam-mini: No Query or Key found. If you are training Transformers, please check the name of your Query and Key in attention blocks and manually add them to 'self.wqk_names' of Adam-mini. You can do this by adding two additional lines of code: optimizer.wqk_names.add('the keywords in the  name of your Query' ); optimizer.wqk_names.add('the keywords in the  name of your Key'). ")
 
-        if (count_output + count_embd + count_wqk == 0) and verbose:
+        if count_wv == 0 and self.verbose:
+            # warning
+            print(
+                "=====>>>  Warning by Adam-mini: No Value found. If you are training Transformers, please check the name of your Value in attention blocks and manually add them to 'self.wv_names' of Adam-mini. You can do this by adding an additional lines of code: optimizer.wv_names.add('the keywords in the  name of your Value' ). ")
+
+        if count_attn_proj == 0 and self.verbose:
+            # warning
+            print(
+                "=====>>>  Warning by Adam-mini: No attn_proj found. If you are training Transformers, please check the name of your attn_proj in attention blocks and manually add them to 'self.attn_proj_names' of Adam-mini. You can do this by adding an additional lines of code: optimizer.attn_proj_names.add('the keywords in the  name of your attn_proj' ). ")
+
+        if count_mlp == 0 and self.verbose:
+            # warning
+            print(
+                "=====>>>  Warning by Adam-mini: No MLP found. If you are training Transformers, please check the name of your MLP in attention blocks and manually add them to 'self.mlp_names' of Adam-mini. You can do this by adding an additional lines of code: optimizer.attn_proj_names.add('the keywords in the  name of your MLP' ). ")
+
+        if (count_output + count_embd + count_wqk + count_wv + count_attn_proj + count_mlp == 0) and self.verbose:
             print(
                 "=====>>>  Warning by Adam-mini: you are using default PyTorch partition for Adam-mini. It can cause training instability on large-scale Transformers.")
 
-        defaults = dict(lr=lr, beta1=betas[0], beta2=betas[1], eps=eps)
-        super().__init__(optim_groups, defaults)
-
     @torch.no_grad()
     def step(self, closure=None):
+        if self.check_block_name:
+            self.count_block()
+            self.check_block_name = False
+
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -184,10 +223,9 @@ class Adam_mini(torch.optim.Optimizer):
             eps = group["eps"]
 
             for p in group["params"]:
-
                 state = self.state[p]
-                if any(embd_name in name for embd_name in self.embd_names) or any(output_name in name for output_name in
-                                                                                  self.output_names):  # this is for embedding and output layer
+                if any(adam_block_name in name for adam_block_name in
+                       self.adam_block_names):  # For v.1.1.0, we will not enter here
                     if p.grad is None:
                         continue
                     if len(state) == 0:
@@ -207,11 +245,10 @@ class Adam_mini(torch.optim.Optimizer):
                     h = (state["v"].sqrt() / bias_correction_2_sqrt).add_(eps)
                     stepsize = lr / bias_correction_1
                     p.addcdiv_(state["m"], h, value=-stepsize)
-
                 elif any(wqk_name in name for wqk_name in self.wqk_names):  # this is for query and key
                     if p.grad is None:
                         continue
-                    head_numel = group["head_numel"]
+                    head_numel = self.head_numel  # group["head_numel"]
                     if len(state) == 0:
                         m = torch.zeros_like(p, memory_format=torch.preserve_format)
                         state["m"] = m.view(-1, head_numel)
@@ -241,14 +278,17 @@ class Adam_mini(torch.optim.Optimizer):
                     update = (state["m"] * stepsize).view(p.size())
                     update.mul_(lr)
                     p.add_(-update)
-
-                elif any(mlp_name in name for mlp_name in
-                         self.mlp_names):  # MLP blocks. If True, then Adam-mini will use one lr per output neuron. This will avoid all_reduce when the single MLP block is sharded on different GPUs. However, we find this design will not boost performance. By default, we will not enter here
+                elif any(embd_name in name for embd_name in self.embd_names) or any(
+                        output_name in name for output_name in self.output_names) or any(
+                        wv_name in name for wv_name in self.wv_names) or any(
+                        mlp_name in name for mlp_name in self.mlp_names) or any(
+                        attn_proj_name in name for attn_proj_name in self.attn_proj_names):
                     if p.grad is None:
                         continue
-                    #neuron_numel = group["neuron_numel"] # assume grad is a matrix by default, so do not need this
+                    # neuron_numel = group["neuron_numel"] # assume grad is a matrix by default, so do not need this
                     if len(state) == 0:
-                        state["m"] = torch.zeros_like(p.grad, memory_format=torch.preserve_format) # assume grad is a matrix by default, no need to view
+                        state["m"] = torch.zeros_like(p.grad,
+                                                      memory_format=torch.preserve_format)  # assume grad is a matrix by default, no need to view
                         # state["m"] = torch.zeros_like(p, memory_format=torch.preserve_format).view(-1, neuron_numel)
                         state["step"] = 0
                         state["neuron_per_gpu"] = state["m"].size(0)  # this is neuron per gpu
@@ -279,7 +319,7 @@ class Adam_mini(torch.optim.Optimizer):
                     update.mul_(lr)
                     p.add_(-update)
 
-                else:  # other blocks. By default, this is for values, projections, MLPs, and LayerNorms.
+                else:  # other blocks. By default, this is for LayerNorms. Sometimes it is also fine to put Value here
                     if len(state) == 0:
                         block_numel = torch.tensor(p.numel()).to(torch.float32).to(device)
                         reduced = False
@@ -359,5 +399,7 @@ class Adam_mini(torch.optim.Optimizer):
                     p.add_(-update)
 
         return loss
+
+
 
 

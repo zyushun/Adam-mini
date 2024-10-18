@@ -1,8 +1,8 @@
 # Adam-mini
 
-This repository contains the official PyTorch implementation of Adam-mini optimizer, a mini-version of Adam that achieves on-par or better performance than AdamW with **45% to 50%** less memory footprint.
+This repository contains the official PyTorch implementation of Adam-mini optimizer, a mini-version of Adam that achieves on-par or better performance than AdamW with **50%** less memory footprint.
 
-Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e., $1/\sqrt{v}$): we argue that >90% of these lr in $v$ could be harmlessly removed if we:
+Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e., $1/\sqrt{v}$): we argue that >99% of these lr in $v$ could be harmlessly removed if we:
 
 (1) carefully partition the parameters into blocks following our proposed principle related to **Hessian structure**.  
 (2) assign a single **but good** lr to each parameter block.
@@ -75,7 +75,7 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 
 We here provide sample code on pre-training, SFT, and RLHF. You need 2xA800-80GB or 2xA100-80GB GPUs to run the experiments below.
 
-### Example 1: GPT2 Pre-training
+### Example 1: GPT2 series Pre-training
 
 We pre-train GPT2 series (125M-1.5B) using [NanoGPT](https://github.com/karpathy/nanoGPT) codebase under DDP framework. Install dependencies from pip:
 
@@ -93,14 +93,18 @@ bash run_gpt2.sh
 
 You will get the following curves.
 
-<img src="figures/gpt2.png" style="zoom:100%;" />
+<img src="figures/gpt2.png" style="zoom:40%;" />
 
-### Example 2: Llama3-8B Pre-training
 
-We here provide a sample code for pre-training Llama3-8B using [Torchtitan](https://github.com/pytorch/torchtitan) code base under FSDP framework. The codebase also support other models from Llama series such as Llama2-7B. Install dependence from pip:
+
+### Example 2: Llama series Pre-training
+
+We here provide a sample code for pre-training Llama series (from 39M to 13B) using [Torchtitan](https://github.com/pytorch/torchtitan) code base under FSDP framework. We recommend using Torchtitan codebase as it will be much faster than NanoGPT codebase for processing the same amount of tokens. 
+
+Install dependence from pip (or please see the instructions from [Torchtitan](https://github.com/pytorch/torchtitan) ):
 
 ```
-cd examples/llama3_8b
+cd examples/llama
 pip install -r requirements.txt
 pip3 install --pre torch==2.5.0.dev20240617  --index-url https://download.pytorch.org/whl/nightly/cu121 #or cu118
 pip3 install --pre torchdata --index-url https://download.pytorch.org/whl/nightly
@@ -118,7 +122,7 @@ python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Meta-Llama
 python torchtitan/datasets/download_tokenizer.py --repo_id meta-llama/Llama-2-13b-hf --hf_token=...
 ```
 
-Change your data path in ./train_configs/llama3_8b_mini.toml. To debug, you can download the small dataset "c4_mini" via [GoogleDrive](https://drive.google.com/drive/folders/1B16KpuhUyz4p7mwc9xmRHuyCY37dAw-2?usp=sharing) and put it under the path "./torchtitan/datasets/c4_mini/".
+Change your data path in the configuration file (for instance,  ./train_configs/llama3_8b_mini.toml).  To debug, you can download the small dataset "c4_mini" via [GoogleDrive](https://drive.google.com/drive/folders/1B16KpuhUyz4p7mwc9xmRHuyCY37dAw-2?usp=sharing) and put it under the path "./torchtitan/datasets/c4_mini/".
 
 ```
 dataset = "c4" #for debug can use "c4_mini"
@@ -128,14 +132,31 @@ dataset_path = "your_path/c4" #for debug can use "./torchtitan/datasets/c4_mini/
 Then we can kick off the training.
 
 ```
-bash run_llama_training_mini.sh
+bash run_llama_3_8b.sh
+bash run_llama_2_13b.sh
 ```
 
-You will get the following curve.
+You will get the following curves.
 
-<img src="figures/loss_llama3_8b.png" style="zoom:100%;" />
+<img src="figures/1001_llama3_8b_13b.pdf" style="zoom:150%;" />
 
-We also pre-train Llama series using [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase. But some unexpected error occurs when saving checkpoint after the training. We are now working on this issue and hopefully we can fully support [TinyLlama](https://github.com/jzhang38/TinyLlama) codebase soon. If you are interested in pre-trianing Llama series, please first try [Torchtitan](https://github.com/pytorch/torchtitan) code base as above.
+We also provide code for our scaling law experiments from 39M to 1B. You can  train all models for  a complete pre-training run by Chinchilla's law. The total running time would be about 300 GPU hours (we tested on 4*A800-80GB GPUs).
+
+```
+bash run_llama_2_scaling_law.sh
+```
+
+You can get the following curves (after changing x-axis into FLOPs and taking log)
+
+<img src="figures/1007_scaling_law.pdf" style="zoom:150%;" />
+
+
+
+After a complete pre-training run by Chinchilla's law, you will get the following the final validation perplexity.
+
+<img src="figures/perplexity_table.png" style="zoom:150%;" />
+
+
 
 ### Example 2: Llama2-7B Supervised Fine-tuning and RLHF
 
@@ -212,6 +233,8 @@ You will get the following curves.
 [24/09/04] We update Adam-mini to version 1.0.3 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We deprecate the argument "model_sharding". We will assume that model parallelism is always used and "model_sharding" is always set True. We will remove this argument in the future version.
 
 [24/09/18] We update Adam-mini to version 1.0.4 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We add the argument "verbose" to allow manually mute the logs by Adam-mini. We support CPU-offload in FSDP.
+
+[24/10/18] We update Adam-mini to version 1.1.0 in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: we change the partition rules for attn_proj, MLPs, embedding, and the output layer. In particular, we design a new partition strategy for the embedding & output layer, and now Adam-mini no longer need to treat these two layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously is 45% to 50% reduction for >1B models).  
 
 ## Acknowledgements
 
