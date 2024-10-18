@@ -138,7 +138,7 @@ bash run_llama_2_13b.sh
 
 You will get the following curves.
 
-<img src="figures/1001_llama3_8b_13b.pdf" style="zoom:150%;" />
+<img src="figures/1001_llama3_8b_13b.png" style="zoom:150%;" />
 
 We also provide code for our scaling law experiments from 39M to 1B. You can  train all models for  a complete pre-training run by Chinchilla's law. The total running time would be about 300 GPU hours (we tested on 4*A800-80GB GPUs).
 
@@ -148,7 +148,7 @@ bash run_llama_2_scaling_law.sh
 
 You can get the following curves (after changing x-axis into FLOPs and taking log)
 
-<img src="figures/1007_scaling_law.pdf" style="zoom:150%;" />
+<img src="figures/1007_scaling_law.png" style="zoom:150%;" />
 
 
 
