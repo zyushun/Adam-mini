@@ -101,7 +101,7 @@ You will get the following curves.
 
 We here provide a sample code for pre-training Llama series (from 39M to 13B) using [Torchtitan](https://github.com/pytorch/torchtitan) code base under FSDP framework. We recommend using Torchtitan codebase as it will be much faster than NanoGPT codebase for processing the same amount of tokens. 
 
-Install dependence from pip (or please see the instructions from [Torchtitan](https://github.com/pytorch/torchtitan) ):
+Install dependence from pip (or please see the instructions from [Torchtitan](https://github.com/pytorch/torchtitan)):
 
 ```
 cd examples/llama
@@ -129,21 +129,7 @@ dataset = "c4" #for debug can use "c4_mini"
 dataset_path = "your_path/c4" #for debug can use "./torchtitan/datasets/c4_mini/"
 ```
 
-Then we can kick off the training.
-
-```
-bash run_llama_3_8b.sh
-bash run_llama_2_13b.sh
-
-#after creating the optimizer
-optimizer.wv_names = {} # For these experiments, we apply a single lr for Value and find it performs a bit better
-```
-
-You will get the following curves.
-
-<img src="figures/1001_llama3_8b_13b.png" style="zoom:150%;" />
-
-We also provide code for our scaling law experiments from 39M to 1B. You can  train all models for  a complete pre-training run by Chinchilla's law. The total running time would be about 300 GPU hours (we tested on 4*A800-80GB GPUs).
+Then we can kick off the training. For instance, you can train Llama models from 39M to 1B and  reproduce our scaling-law experiments. You can  train all models for  a complete pre-training run by Chinchilla's law. The total running time would be about 300 GPU hours (we tested on 4*A800-80GB GPUs).
 
 ```
 bash run_llama_2_scaling_law.sh
@@ -153,11 +139,37 @@ You can get the following curves (after changing x-axis into FLOPs and taking lo
 
 <img src="figures/1007_scaling_law.png" style="zoom:150%;" />
 
-
-
 After a complete pre-training run by Chinchilla's law, you will get the following the final validation perplexity.
 
 <img src="figures/perplexity_table.png" style="zoom:150%;" />
+
+In particular, the training curves of 1B model will look like the following.
+
+
+
+<img src="figures/0928_adam_mini_1b.png" style="zoom:80%;" />
+
+
+
+You can also pre-train Llama3-8B and Llama2-13B using the folloiwng code.
+
+```
+bash run_llama_3_8b.sh
+bash run_llama_2_13b.sh
+
+#after creating the optimize
+optimizer.wv_names = {} # For 8B and 13B experiments, we apply a single lr for Value and find it performs a bit better
+```
+
+You will get the following curves.
+
+<img src="figures/1001_llama3_8b_13b.png" style="zoom:150%;" />
+
+
+
+
+
+
 
 
 

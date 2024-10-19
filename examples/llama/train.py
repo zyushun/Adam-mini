@@ -131,7 +131,7 @@ def build_optimizers(model_parts, job_config: JobConfig, world_mesh=None):
                         n_heads = model_config.n_heads,
                         n_kv_heads = model_config.n_kv_heads,
                         )
-            logger.info(f"======>>>>> Using Adam-mini-token optimizer, lr = {lr} , using: qk_names = {optimizer.wqk_names}, mlp_names = {optimizer.mlp_names}")
+            logger.info(f"======>>>>> Using Adam-mini optimizer, lr = {lr}")
 
         elif name == "adafactor_zhai":
                 
