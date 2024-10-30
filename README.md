@@ -1,19 +1,23 @@
 # Adam-mini
 
+**【Important notice!!!】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on more careful Hessian investigation of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need for Adam-mini to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper will be updated accordingly very soon.
+
+
+
 This repository contains the official PyTorch implementation of Adam-mini optimizer, a mini-version of Adam that achieves on-par or better performance than AdamW with **50%** less memory footprint.
 
-Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e., $1/\sqrt{v}$): we argue that >99% of these lr in $v$ could be harmlessly removed if we:
+Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e., $1/\sqrt{v}$): we argue that **>99.9%** of these lr in $v$ could be harmlessly removed if we:
 
 (1) carefully partition the parameters into blocks following our proposed principle related to **Hessian structure**.  
 (2) assign a single **but good** lr to each parameter block.
 
-We find a cheap and effective way to reach these requirements. The resulting algorithm is shown below in **Algorithm 1**. Check out more detailed descriptions in our paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
+We find a simple and effective way to reach these requirements. The resulting algorithm is shown below in **Algorithm 1**. Check out more detailed descriptions in our paper: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
 <img src="figures/figure1.png" style="zoom:40%;" />
 
 <img src="figures/illustration.png" style="zoom:40%;" />
 
-![](figures/adam-mini.png)
+![](figures/adam-mini-v1.1.0.png)
 
 ## How to use
 
@@ -93,7 +97,7 @@ bash run_gpt2.sh
 
 You will get the following curves.
 
-<img src="figures/gpt2.png" style="zoom:40%;" />
+<img src="figures/gpt2.png" style="zoom:100%;" />
 
 
 
@@ -137,11 +141,11 @@ bash run_llama_2_scaling_law.sh
 
 You can get the following curves (after changing x-axis into FLOPs and taking log)
 
-<img src="figures/1007_scaling_law.png" style="zoom:150%;" />
+<img src="figures/scaling_law.png" style="zoom:100%;" />
 
 After a complete pre-training run by Chinchilla's law, you will get the following the final validation perplexity.
 
-<img src="figures/perplexity_table.png" style="zoom:150%;" />
+<img src="figures/perplexity_table.png" style="zoom:100%;" />
 
 In particular, the training curves of 1B model will look like the following.
 
