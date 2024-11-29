@@ -1,6 +1,6 @@
 # Adam-mini
 
-**【Important notice on Oct 18th 2024】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on more careful Hessian investigation of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need for Adam-mini to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously  is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper is updated accordingly: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
+**【Important notice on Oct 18th 2024】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on a more careful investigation into the Hessian of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously  is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper is updated accordingly: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
 ---
 
@@ -83,6 +83,8 @@ Our current implementation of Adam-mini supports popular distributed frameworks 
 6. [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory). Detailed usage instruction can be seen in [examples](https://github.com/hiyouga/LLaMA-Factory/blob/main/examples/README_zh.md)
 7. More is coming! Do not hesitate to contact us if Adam-mini does not support your codebase!
 
+
+
 ## Examples
 
 We here provide sample code on pre-training, SFT, and RLHF. You need 2xA800-80GB or 2xA100-80GB GPUs to run the experiments below.
@@ -105,9 +107,7 @@ bash run_gpt2.sh
 
 You will get the following curves.
 
-<img src="figures/GPT2-330M-training.pdf" style="zoom:200%;" />
-
-
+<img src="figures/GPT2-330M-training.png" style="zoom:200%;" />
 
 ### Example 2: Llama series Pre-training
 
@@ -159,7 +159,7 @@ In particular, the training curves of 1B model will look like the following.
 
 
 
-<img src="figures/0928_adam_mini_1b.pdf" style="zoom:200%;" />
+<img src="figures/0928_adam_mini_1b.png" style="zoom:200%;" />
 
 
 
@@ -175,15 +175,7 @@ optimizer.wv_names = {} # For experiments with relatively small total steps  (li
 
 You will get the following curves.
 
-<img src="figures/1001_llama3_8b_13b.pdf" style="zoom:200%;" />
-
-
-
-
-
-
-
-
+<img src="figures/1001_llama3_8b_13b.png" style="zoom:200%;" />
 
 ### Example 2: Llama2-7B Supervised Fine-tuning and RLHF
 
@@ -281,7 +273,7 @@ If you find this code helpful, please cite our paper in the following format.
 ```
 @article{zhang2024adam,
   title     = {Adam-mini: Use Fewer Learning Rates To Gain More},
-  author    = {Zhang, Yushun and Chen, Congliang  and Li, Ziniu and Ding, Tian and Wu, Chenwei and Ye, Yinyu and Luo, Zhi-Quan and Sun, Ruoyu},
+  author    = {Zhang, Yushun and Chen, Congliang  and Li, Ziniu and Ding, Tian and Wu, Chenwei and Kingma, Diederik P and Ye, Yinyu and Luo, Zhi-Quan and Sun, Ruoyu},
   booktitle = {arXiv preprint arXiv:2406.16793},
   year      = {2024},
 }
