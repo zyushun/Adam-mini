@@ -251,7 +251,7 @@ if algorithm == 'adamw':
 elif algorithm == 'adam_mini':
     optimizer = Adam_mini(
         named_parameters=model.named_parameters(),
-        lr=lr,
+        lr=learning_rate,
         betas=(beta1, beta2),
         weight_decay=weight_decay,
         model_sharding=False,
