@@ -1,6 +1,6 @@
 # Adam-mini
 
-**【Important notice!!!】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on more careful Hessian investigation of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need for Adam-mini to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper will be updated accordingly very soon.
+**【Important notice on Oct 18th 2024】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on more careful Hessian investigation of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need for Adam-mini to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously  is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper is updated accordingly: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
 
 
 
@@ -48,7 +48,7 @@ optimizer = Adam_mini(
             weight_decay = weight_decay,
             dim = model_config.dim,
             n_heads = model_config.n_heads,
-            n_kv_heads = model_config.n_kv_heads,
+            n_kv_heads = model_config.n_kv_heads, #default to be none
             )
 
 ```
@@ -62,6 +62,14 @@ If you are training Transformers, please also pass the following info to Adam-mi
 - n_heads: number of attention heads. Could be unspecified if you are training non-transformer models.
 
 - n_kv_heads: number of head for Key and Value. Or equivalently, number of query groups in Group query Attention. Also known as "n_query_groups". If is None, it will be the same value as n_head. Could be unspecified if you are training non-transformer models.
+
+**Remark:** If your total training step is small (<10k or 20k), we recommend adding the following line. This will apply a single lr for Value and we find it can speed up the initial convergence of Adam-mini. See [Appendix C.3](https://arxiv.org/pdf/2406.16793) in the paper for more discussion.
+
+```
+optimizer.wv_names = {} 
+```
+
+
 
 ## Support
 
@@ -81,7 +89,7 @@ We here provide sample code on pre-training, SFT, and RLHF. You need 2xA800-80GB
 
 ### Example 1: GPT2 series Pre-training
 
-We pre-train GPT2 series (125M-1.5B) using [NanoGPT](https://github.com/karpathy/nanoGPT) codebase under DDP framework. Install dependencies from pip:
+We pre-train GPT2 series (125M, 330M, 1.5B) using [NanoGPT](https://github.com/karpathy/nanoGPT) codebase under DDP framework. Install dependencies from pip:
 
 ```
 conda env create -f gpt2/environment.yml
@@ -97,7 +105,7 @@ bash run_gpt2.sh
 
 You will get the following curves.
 
-<img src="figures/gpt2.png" style="zoom:100%;" />
+<img src="figures/GPT2-330M-training.pdf" style="zoom:200%;" />
 
 
 
@@ -151,7 +159,7 @@ In particular, the training curves of 1B model will look like the following.
 
 
 
-<img src="figures/0928_adam_mini_1b.png" style="zoom:80%;" />
+<img src="figures/0928_adam_mini_1b.pdf" style="zoom:200%;" />
 
 
 
@@ -162,12 +170,12 @@ bash run_llama_3_8b.sh
 bash run_llama_2_13b.sh
 
 #after creating the optimize
-optimizer.wv_names = {} # For 8B and 13B experiments, we apply a single lr for Value and find it performs a bit better
+optimizer.wv_names = {} # For experiments with relatively small total steps  (like the 8B and 13B experiments here, we only run for 10k steps), we apply a single lr for Value and find it performs a bit better
 ```
 
 You will get the following curves.
 
-<img src="figures/1001_llama3_8b_13b.png" style="zoom:150%;" />
+<img src="figures/1001_llama3_8b_13b.pdf" style="zoom:200%;" />
 
 
 
@@ -254,6 +262,8 @@ You will get the following curves.
 [24/09/18] We update Adam-mini to version 1.0.4 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We add the argument "verbose" to allow manually mute the logs by Adam-mini. We support CPU-offload in FSDP.
 
 [24/10/18] We update Adam-mini to version 1.1.0 in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: we change the partition rules for attn_proj, MLPs, embedding, and the output layer. In particular, we design a new partition strategy for the embedding & output layer, and now Adam-mini no longer need to treat these two layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously is 45% to 50% reduction for >1B models).  
+
+[24/11/29] We update Adam-mini to version 1.1.1 in PyPI (see [here](https://pypi.org/project/adam-mini/)). We fixed the log issue in [Issue #30](https://github.com/zyushun/Adam-mini/issues/30).
 
 ## Acknowledgements
 

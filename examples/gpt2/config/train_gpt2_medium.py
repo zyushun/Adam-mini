@@ -10,8 +10,8 @@ n_embd = 1024
 dropout = 0.0 # for pretraining 0 is good, for finetuning try 0.1+
 bias = False
 
-max_iters = 13200 # by Chinchilla's law: #tokens = 20 * # model parameters
-lr_decay_iters = 13200
+max_iters = 50000 # we cannot effort to run the rest 50000 steps
+lr_decay_iters = 100000
 
 # eval stuff
 eval_interval = 100
@@ -25,11 +25,11 @@ learning_rate = 3e-4 # max learning rate
 weight_decay = 1e-1
 beta1 = 0.9
 beta2 = 0.95
-epsilon = 1e-8
+epsilon = 1e-6 # for 1e-8, Adam will encounter loss spike, but Adam-mini will not.
 grad_clip = 1.0 # clip gradients at this value, or disable if == 0.0
 # learning rate decay settings
 decay_lr = True # whether to decay the learning rate
-warmup_iters = 132 # 1% total steps
+warmup_iters = 2000
 min_lr = 6e-5 
 
 

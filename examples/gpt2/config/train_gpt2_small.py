@@ -1,8 +1,8 @@
 # these make the total batch size be ~0.5M
 # 8 batch size * 1024 block size * 6 gradaccum * 10 GPUs = 491,520
-batch_size = 30  #12  why does 30 OOM?
+batch_size = 60  #12  why does 30 OOM?
 block_size = 1024
-gradient_accumulation_steps = 16 #40
+gradient_accumulation_steps = 8 #40
 
 n_layer = 12
 n_head = 12
@@ -11,8 +11,8 @@ dropout = 0.0 # for pretraining 0 is good, for finetuning try 0.1+
 bias = False
 
 
-max_iters = 5000 # by Chinchilla's law: #tokens = 20 * # model parameters
-lr_decay_iters = 5000
+max_iters = 100000
+lr_decay_iters = 100000
 
 # eval stuff
 eval_interval = 100
@@ -29,7 +29,7 @@ beta2 = 0.95 #0.95
 grad_clip = 1.0 # clip gradients at this value, or disable if == 0.0
 # learning rate decay settings
 decay_lr = True # whether to decay the learning rate
-warmup_iters = 50 # 1% total steps
+warmup_iters = 2000
 min_lr = 3e-5
 
 
