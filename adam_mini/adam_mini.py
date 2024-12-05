@@ -5,16 +5,6 @@ import torch
 import torch.nn as nn
 import torch.distributed as dist
 from torch.distributed._tensor import Replicate
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-
-import math
-from typing import Iterable, Tuple, Union, Optional
-
-import torch
-import torch.nn as nn
-import torch.distributed as dist
-from torch.distributed._tensor import Replicate
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
