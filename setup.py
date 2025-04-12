@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="adam_mini",
-    version="0.1.0",
+    version="1.1.1",
     author="NotImplemented",
     author_email="NotImplemented",
-    description="An implementation of the Adam_mini optimizer",
+    description="Official implementation of the Adam_mini optimizer",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/zyushun/Adam-mini",
@@ -20,7 +20,7 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     extras_require={
-        "torch": ["torch>=1.8.0"],
+        "torch": ["torch>=2.1.0"],
         "dev": [
             "twine",
             "setuptools",

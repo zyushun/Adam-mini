@@ -1,9 +1,5 @@
 # Adam-mini
 
-**【Important notice on Oct 18th 2024】** We are happy to anounce that we have updated Adam-mini to **version 1.1.0** in PyPI (see [here](https://pypi.org/project/adam-mini/)). This is a major update: based on a more careful investigation into the Hessian of Transformers, we change the partition strategies for Values, attn_proj, MLPs, embedding, and the output layer. In particular, our new partition strategy  for the embedding & output layer eliminates the need to treat these these layers as special cases. As a result, Adam-mini now saves 50% memory over Adam for all models of any size (previously  is 45% to 50% reduction for >1B models).  The updated form of Adam-mini is shown in **Algorithm 1** and the paper is updated accordingly: [Adam-mini: Use Fewer Learning Rates To Gain More](https://arxiv.org/abs/2406.16793).
-
----
-
 This repository contains the official PyTorch implementation of Adam-mini optimizer, a mini-version of Adam that achieves on-par or better performance than AdamW with **50%** less memory footprint.
 
 Adam-mini reduces memory by cutting down the learning rate (lr) resources in Adam (i.e., $1/\sqrt{v}$): we argue that **>99.9%** of these lr in $v$ could be harmlessly removed if we:
@@ -21,7 +17,7 @@ We find a simple and effective way to reach these requirements. The resulting al
 
 ## How to use
 
-Install torch (>=1.8.0) and run the following commands.
+Install torch (>=2.1.0) and run the following commands.
 
 ```
 pip install adam-mini
