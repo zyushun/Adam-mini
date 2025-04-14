@@ -258,6 +258,7 @@ elif algorithm == 'adam_mini':
         dim=n_embd,
         n_heads=n_head
     )
+    #optimizer.wv_names = {} # For experiments with relatively small total steps  (like the 8B and 13B experiments here, we only run for 10k steps), we apply a single lr for Value and find it performs a bit better. Please comment this line if your total steps is larger than 10k or 20k or more.
     raise ValueError("algorithm not supported")
 
 if init_from == 'resume':

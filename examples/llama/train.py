@@ -131,6 +131,8 @@ def build_optimizers(model_parts, job_config: JobConfig, world_mesh=None):
                         n_heads = model_config.n_heads,
                         n_kv_heads = model_config.n_kv_heads,
                         )
+            optimizer.wv_names = {} # For experiments with relatively small total steps  (like the 8B and 13B experiments here, we only run for 10k steps), we apply a single lr for Value and find it performs a bit better. Please comment this line if your total steps is larger than 10k or 20k or more.
+
             logger.info(f"======>>>>> Using Adam-mini optimizer, lr = {lr}")
 
         elif name == "adafactor_zhai":
