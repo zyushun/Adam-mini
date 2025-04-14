@@ -159,13 +159,13 @@ In particular, the training curves of 1B model will look like the following.
 
 
 
-You can also pre-train Llama3-8B and Llama2-13B using the folloiwng code.
+You can also pre-train Llama3-8B and Llama2-13B using the followng code.
 
 ```
 bash run_llama_3_8b.sh
 bash run_llama_2_13b.sh
 
-#after creating the optimize
+#after creating the optimizer
 optimizer.wv_names = {} # For experiments with relatively small total steps  (like the 8B and 13B experiments here, we only run for 10k steps), we apply a single lr for Value and find it performs a bit better
 ```
 
