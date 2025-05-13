@@ -114,7 +114,7 @@ Install dependence from pip (or please see the instructions from [Torchtitan](ht
 ```
 cd examples/llama
 pip install -r requirements.txt
-pip3 install --pre torch==2.5.0.dev20240617  --index-url https://download.pytorch.org/whl/nightly/cu121 #or cu118
+pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu126 --force-reinstall #this is for cuda version 12.6. Please check your cuda version using nvidia-smi
 pip3 install --pre torchdata --index-url https://download.pytorch.org/whl/nightly
 ```
 
