@@ -313,13 +313,20 @@ class Adam_mini(torch.optim.Optimizer):
                     p.add_(-update)
 
                 else:  # other blocks. By default, this is for LayerNorms. Sometimes it is also fine to put Value here
+                    # Narrow repair: explicit plain-Tensor block shards only.
+                    # Do not infer logical block membership from visible devices.
+                    explicit_shard = group.get("block_is_sharded", False)
+                    shard_group = group.get("block_shard_group", None)
+                    if explicit_shard and hasattr(p, "device_mesh"):
+                        raise ValueError("Explicit plain-Tensor shard repair does not accept DTensor")
                     if len(state) == 0:
                         block_numel = torch.tensor(p.numel()).to(torch.float32).to(device)
                         reduced = False
-                        if (self.world_size > 1):
-                            tensor_list = [torch.zeros_like(block_numel) for _ in range(self.world_size)]
+                        block_world_size = dist.get_world_size(shard_group) if explicit_shard else self.world_size
+                        if (block_world_size > 1):
+                            tensor_list = [torch.zeros_like(block_numel) for _ in range(block_world_size)]
 
-                            dist.all_gather(tensor_list, block_numel)
+                            dist.all_gather(tensor_list, block_numel, group=shard_group if explicit_shard else None)
                             s = 0
                             block_numel = 0
                             for d in tensor_list:
@@ -345,7 +352,9 @@ class Adam_mini(torch.optim.Optimizer):
                         grad = p.grad  # .to(torch.float32)
                         tmp_lr = torch.sum(grad * grad)
 
-                    if (state["reduced"]):
+                    if state["reduced"] and explicit_shard:
+                        dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM, group=shard_group)
+                    elif (state["reduced"]):
                         # Force communication over GPUs when GPUs are available
                         if tmp_lr.device.type == 'cpu':
                             # Move the tensor to the current GPU device
@@ -392,7 +401,6 @@ class Adam_mini(torch.optim.Optimizer):
                     p.add_(-update)
 
         return loss
-
 
 
 
