@@ -77,7 +77,13 @@ class Adam_mini(torch.optim.Optimizer):
         else:
             self.n_kv_heads = n_heads
 
-        self.world_size = torch.cuda.device_count()
+        # Visible devices are not a process group. all_gather on an
+        # uninitialized default group raises "no backend" / "default process
+        # group has not been initialized" (issues 28 and 35).
+        if dist.is_available() and dist.is_initialized():
+            self.world_size = dist.get_world_size()
+        else:
+            self.world_size = 1
         self.verbose = verbose
         self.check_block_name = True
         self.head_numel = self.dim * self.dim // self.n_heads
@@ -347,8 +353,11 @@ class Adam_mini(torch.optim.Optimizer):
 
                     if (state["reduced"]):
                         # Force communication over GPUs when GPUs are available
-                        if tmp_lr.device.type == 'cpu':
-                            # Move the tensor to the current GPU device
+                        if tmp_lr.device.type == 'cpu' and torch.cuda.is_available():
+                            # NCCL cannot reduce a CPU tensor. Reduce the GPU
+                            # copy, then write that sum back. The previous code
+                            # reduced the CPU tensor and copied the untouched
+                            # GPU buffer over it.
                             tmp_lr_gpu = tmp_lr.to(torch.cuda.current_device())
 
                             if "device_mesh" in dir(tmp_lr):
@@ -357,10 +366,8 @@ class Adam_mini(torch.optim.Optimizer):
                                 dist.all_reduce(lr_local, op=dist.ReduceOp.SUM)
                                 tmp_lr.redistribute(placements=[Replicate()])
                             else:
-                                # when tmp_lr is a  standard tensor
-                                dist.all_reduce(tmp_lr, op=dist.ReduceOp.SUM)
+                                dist.all_reduce(tmp_lr_gpu, op=dist.ReduceOp.SUM)
 
-                            # Move the result back to the CPU tensor
                             tmp_lr.copy_(tmp_lr_gpu.cpu())
                         else:
                             # Tensor is already on GPU, use NCCL backend
